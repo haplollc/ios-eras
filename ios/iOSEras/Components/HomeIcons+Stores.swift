@@ -1673,64 +1673,138 @@ private struct StoresTVSet: View {
 
 private enum StoresWordmarkLook { case white, iridescent, muted }
 
-/// The Apple TV wordmark: the logo and a lowercase "tv". From iOS 26.1 the letters are white on top and
-/// iridescent along the bottom (violet, cyan, green under the logo; yellow in the t; pink in the v).
+/// The Apple logo's own outline in a unit box (y down), traced from the system font's Apple glyph
+/// (U+F8FF) with CTFontCreatePathForGlyph — the same drawing SF's apple.logo uses. Rasterised, the
+/// two agree to IoU 0.996, and both agree with the shipping Apple TV icon's apple to IoU 0.992.
+/// A Shape rather than `Image(systemName:)` so the web port can draw the identical path.
+private struct StoresAppleMark: Shape {
+    static let bodyStart = CGPoint(x: 0.7248, y: 0.2418)
+    /// Quadratics: control point then end point, 34 of them.
+    static let body: [(Double, Double, Double, Double)] = [
+        (0.7423, 0.2418, 0.7843, 0.2463), (0.8263, 0.2508, 0.8767, 0.2718), (0.9270, 0.2927, 0.9683, 0.3411),
+        (0.9659, 0.3430, 0.9453, 0.3549), (0.9247, 0.3669, 0.8993, 0.3897), (0.8739, 0.4126, 0.8549, 0.4478),
+        (0.8358, 0.4829, 0.8358, 0.5313), (0.8358, 0.5867, 0.8600, 0.6254), (0.8842, 0.6641, 0.9163, 0.6876),
+        (0.9485, 0.7112, 0.9734, 0.7221), (0.9984, 0.7331, 1.0000, 0.7337), (0.9992, 0.7363, 0.9798, 0.7795),
+        (0.9603, 0.8227, 0.9159, 0.8756), (0.8771, 0.9213, 0.8323, 0.9600), (0.7875, 0.9987, 0.7248, 0.9987),
+        (0.6828, 0.9987, 0.6558, 0.9887), (0.6289, 0.9787, 0.6003, 0.9687), (0.5718, 0.9587, 0.5234, 0.9587),
+        (0.4766, 0.9587, 0.4453, 0.9691), (0.4140, 0.9794, 0.3858, 0.9897), (0.3577, 1.0000, 0.3196, 1.0000),
+        (0.2617, 1.0000, 0.2181, 0.9626), (0.1745, 0.9252, 0.1285, 0.8730), (0.0753, 0.8111, 0.0377, 0.7218),
+        (0.0000, 0.6325, 0.0000, 0.5416), (0.0000, 0.4442, 0.0452, 0.3781), (0.0904, 0.3121, 0.1614, 0.2782),
+        (0.2324, 0.2444, 0.3085, 0.2444), (0.3489, 0.2444, 0.3846, 0.2550), (0.4203, 0.2656, 0.4516, 0.2766),
+        (0.4830, 0.2876, 0.5083, 0.2876), (0.5329, 0.2876, 0.5654, 0.2760), (0.5979, 0.2643, 0.6384, 0.2531),
+        (0.6788, 0.2418, 0.7248, 0.2418),
+    ]
+    static let leafStart = CGPoint(x: 0.6812, y: 0.1599)
+    /// Quadratics: control point then end point, 12 of them.
+    static let leaf: [(Double, Double, Double, Double)] = [
+        (0.6503, 0.1902, 0.6035, 0.2105), (0.5567, 0.2308, 0.5147, 0.2308), (0.5059, 0.2308, 0.4980, 0.2295),
+        (0.4972, 0.2276, 0.4964, 0.2224), (0.4956, 0.2173, 0.4956, 0.2115), (0.4956, 0.1728, 0.5163, 0.1364),
+        (0.5369, 0.0999, 0.5630, 0.0761), (0.5964, 0.0438, 0.6471, 0.0226), (0.6979, 0.0013, 0.7439, 0.0000),
+        (0.7462, 0.0084, 0.7462, 0.0200), (0.7462, 0.0587, 0.7280, 0.0951), (0.7098, 0.1315, 0.6812, 0.1599),
+    ]
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        for (start, loop) in [(Self.bodyStart, Self.body), (Self.leafStart, Self.leaf)] {
+            let at = { (x: Double, y: Double) in
+                CGPoint(x: rect.minX + rect.width * x, y: rect.minY + rect.height * y)
+            }
+            path.move(to: at(start.x, start.y))
+            for (cx, cy, x, y) in loop { path.addQuadCurve(to: at(x, y), control: at(cx, cy)) }
+            path.closeSubpath()
+        }
+        return path
+    }
+}
+
+/// The Apple TV wordmark: the logo and a lowercase "tv" on one baseline. From iOS 26.1 the letters
+/// are white with an iridescent sweep rising through their bottom third (violet, cyan, green under
+/// the logo; yellow in the t; pink in the v).
+///
+/// Every number here is measured off the shipping icon — macOS 26 Tahoe's TV.app at 2048 px and the
+/// App Store's iOS artwork, which carry the same late-2025 rebrand — as a fraction of the tile:
+///   apple x 0.1173-0.4289  y 0.2764-0.6610
+///   t     x 0.4563-0.6051  y 0.3190-0.6598,  stem x 0.4964-0.5541
+///   v     x 0.6300-0.8821  y 0.3834-0.6574
+/// iOS's SF Display sets "tv" a little wider than Apple's own letterforms, so size, the horizontal
+/// squeeze and the kerning are fitted to that measured ink rather than shared with the web, which
+/// starts from SF Text and needs its own numbers for the same result.
 private struct StoresTVWordmark: View {
     let edge: CGFloat
     let look: StoresWordmarkLook
 
     var body: some View {
         switch look {
-        case .white:
-            mark.foregroundStyle(.white)
-        case .iridescent:
-            sheen(colours: [hex(0xA88DFB), hex(0xA8D9FE), hex(0x86E0E6), hex(0x77DEB0), hex(0xC9EB92), hex(0xFDD162),
-                            hex(0xF7A8A4), hex(0xF3AAC6)],
-                  top: .white)
-        case .muted:
-            sheen(colours: [hex(0x8974D7), hex(0xA2C6EA), hex(0x8DCBD5), hex(0x78BE97), hex(0xB7D085), hex(0xDBBA61),
-                            hex(0xE2999E), hex(0xDA9FB8)],
-                  top: hex(0xE6E6E8))
+        case .white: painted(Color.white)
+        case .iridescent: sheen(dim: 1, top: .white)
+        case .muted: sheen(dim: 0.86, top: hex(0xE6E6E8))
         }
     }
 
-    /// Apple's own mark sets the apple and the "tv" on ONE baseline: the logo's ink ends where the
-    /// letters do. SF's apple.logo hangs below the text baseline, so it is lifted back onto it (and
-    /// grown to match), the pair is closed up and centred, and the whole mark sits a little high, as
-    /// the shipping icon does. `fixedSize` keeps the Text at its ideal width: inside `sheen` the mask
-    /// re-proposes the HStack's own (rounded) width, and a hair less than ideal truncated "tv" to "…".
+    /// Both glyphs placed by their measured ink rather than by a stack's idea of the gap: the apple's
+    /// frame IS its ink box (the traced outline fills its unit box), and the "tv" is pinned by its
+    /// baseline (0.6544, which puts the t's tail on 0.6598) and by its leading edge (0.4548, the t's
+    /// crossbar at 0.4563 less its left side bearing). `fixedSize` keeps the Text at its ideal width —
+    /// inside a mask the proposal is re-rounded, and a hair less than ideal truncates "tv" to "…".
     private var mark: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 0) {
-            Image(systemName: "apple.logo")
-                .font(.system(size: edge * 0.413, weight: .medium))
-                .offset(y: -edge * 0.034)
+        ZStack(alignment: .topLeading) {
+            Color.clear
+            StoresAppleMark()
+                .frame(width: edge * 0.3116, height: edge * 0.3846)
+                .offset(x: edge * 0.1173, y: edge * 0.2764)
             Text("tv")
-                .font(.system(size: edge * 0.535, weight: .semibold))
-                .kerning(-edge * 0.012)
+                .font(.system(size: edge * 0.524, weight: .semibold))
+                .kerning(-edge * 0.0044)
                 .fixedSize()
+                .scaleEffect(x: 0.978, anchor: .leading)
+                .alignmentGuide(.leading) { _ in -edge * 0.4548 }
+                .alignmentGuide(.top) { $0[.lastTextBaseline] - edge * 0.6544 }
         }
-        .offset(x: -edge * 0.011, y: -edge * 0.037)
+        .frame(width: edge, height: edge)
     }
 
-    /// Where each sweep colour sits across the mark: violet to green under the logo, yellow-green in the t,
-    /// pink through the v.
-    private static let sweep: [Double] = [0, 0.13, 0.25, 0.36, 0.52, 0.61, 0.71, 1]
+    /// One paint through the mark. Every look goes through this, so the white years and the
+    /// iridescent ones lay the glyphs out identically.
+    private func painted<S: View>(_ fill: S) -> some View {
+        fill.mask { mark }.frame(width: edge, height: edge)
+    }
 
-    /// Both gradients span the whole wordmark (a foreground style would restart on each glyph), masked by it.
-    private func sheen(colours: [Color], top: Color) -> some View {
-        ZStack {
-            mark.hidden().overlay {
-                LinearGradient(stops: zip(colours, Self.sweep).map { Gradient.Stop(color: $0, location: $1) },
+    /// SWEEP: read straight off the artwork's bottom band (below y 0.598 the white has run out, so
+    /// what is there IS the sweep) as hue/saturation at full value — 255deg s0.49 at x 0.16, 216/0.40
+    /// at 0.25, 200/0.47 at 0.31, 96/0.44 at 0.51, 43/0.59 at 0.57, 8/0.47 at 0.71, 333/0.33 at 0.80.
+    /// The left end runs off the bottom of the apple's lobe, so its violet is un-mixed from higher up.
+    private static let sweep: [(Double, UInt32)] = [
+        (0.118, 0x8861FF), (0.16, 0xA282FF), (0.20, 0xA89DFF), (0.25, 0x99C3FF),
+        (0.31, 0x87D8FF), (0.37, 0x8CFFED), (0.44, 0x8BFFA3), (0.51, 0xBDFF8F),
+        (0.57, 0xFFD568), (0.63, 0xFFB478), (0.70, 0xFF9A84), (0.77, 0xFFA2B2),
+        (0.84, 0xFFABD2), (0.882, 0xFFADD8),
+    ]
+
+    /// WHITE CAP: opaque to y 0.43 — the top 40% of the mark carries no colour at all — then down to
+    /// nothing by 0.605. Apple's own saturation by tile row is 0.004 at y 0.39, 0.019 at 0.43, 0.066
+    /// at 0.47, 0.167 at 0.51, 0.305 at 0.55, 0.409 at 0.59, 0.474 at 0.63; ours was at 0.091 by
+    /// y 0.43 already, which is what washed the whole mark out.
+    private static let cap: [(Double, Double)] = [
+        (0, 1), (0.43, 1), (0.46, 0.94), (0.49, 0.856), (0.52, 0.683), (0.55, 0.437), (0.58, 0.178), (0.605, 0), (1, 0),
+    ]
+
+    /// Both gradients span the whole TILE (a foreground style would restart on each glyph), masked by
+    /// the mark, so their locations are the measured tile fractions above.
+    private func sheen(dim: Double, top: Color) -> some View {
+        painted(
+            ZStack {
+                LinearGradient(stops: Self.sweep.map { .init(color: Self.shade($1, dim), location: $0) },
                                startPoint: .leading, endPoint: .trailing)
-                    .mask { mark }
-            }
-            mark.hidden().overlay {
-                LinearGradient(stops: [.init(color: top, location: 0), .init(color: top, location: 0.40),
-                                       .init(color: top.opacity(0), location: 0.70)],
+                LinearGradient(stops: Self.cap.map { .init(color: top.opacity($1), location: $0) },
                                startPoint: .top, endPoint: .bottom)
-                    .mask { mark }
             }
-        }
+        )
         .shadow(color: .black.opacity(0.45), radius: edge * 0.02, y: edge * 0.014)
+    }
+
+    /// 2026's muted sibling: the same sweep dimmed to 0.86 of its value.
+    private static func shade(_ value: UInt32, _ dim: Double) -> Color {
+        let channel = { (shift: UInt32) in Double((value >> shift) & 0xFF) / 255 * dim }
+        return Color(.sRGB, red: channel(16), green: channel(8), blue: channel(0))
     }
 }

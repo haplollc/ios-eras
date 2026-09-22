@@ -796,9 +796,15 @@ function stocksChart(o: {
     const lineShadow = o.glass ? `filter="${shadow(k, black(0.5), 1.2, 0, 1.4)}"` : ''
     out += stroke(polyline(o.points), o.lineInk, o.lineWidth * 100, `stroke-linecap="round" stroke-linejoin="round" ${lineShadow}`)
     if (o.ring) {
-      out += circle(bx, py, m, hex(0x2e8c9c), `filter="${shadow(k, black(0.45), 1.2, 0, 1.2)}"`)
-      out += ring(bx, py, m, m * 0.12, fade(o.markerInk, 0.55))
-      out += circle(bx, py, m * 0.62, o.markerInk)
+      // iOS 26's cursor head: a glass torus. Measured off the 1024 pt
+      // artwork: outer 0.239 of the tile, the bright core 0.565 of that,
+      // the body a dark teal (#007987) with a darker edge where it meets
+      // the core, and the cursor itself running bright across the ring.
+      out += circle(bx, py, m, hex(0x007987), `filter="${shadow(k, black(0.5), 1.4, 0, 1.4)}"`)
+      out += ring(bx, py, m, m * 0.05, white(0.2))
+      out += rect(bx, py, px(0.8, o.barWidth, o.edge), m, fade(o.barInk, 0.9))
+      out += ring(bx, py, m * 0.63, m * 0.055, hex(0x003f50))
+      out += circle(bx, py, m * 0.565, radial(k, [hex(0x00e2ff), hex(0x00d0ee)], [0.42, 0.36], 0.9))
     } else {
       if (o.glass) out += circle(bx, py, m * 1.6, fade(o.markerInk, 0.32))
       out += circle(bx, py, m, o.markerInk, o.glass ? `filter="${shadow(k, black(0.4), 1, 0, 1)}"` : '')
@@ -1104,11 +1110,14 @@ export const paper: HomeAppDef[] = [
       design(2013, 0xdbdcde, 0x898c91, nestedGear(hex(0x545454), hex(0xb5b5b5), hex(0xdbdcde), hex(0x898c91), 1.0)),
       design(2017, 0xe4e5e9, 0x8e8e94, nestedGear(hex(0x2e2e2f), hex(0xb4b4b6), hex(0xe4e5e9), hex(0x8e8e94), 1.0)),
       design(2024, 0xe4e5e9, 0x8e8e94, nestedGear(hex(0x2e2e2f), hex(0xb4b4b6), hex(0xe4e5e9), hex(0x8e8e94), 0.95)),
+      // Measured off the 1024 pt iOS 26 artwork: 36 teeth (ours drew 40) in
+      // a band from r 0.35 to 0.405, on a plate that runs #99999C to
+      // #6A696E — ours bottomed out 17 levels too dark at #59595D.
       design(
         2025,
-        0xa7a7ad,
-        0x5f5f63,
-        glassGears({ frontAlpha: 0.94, back: hex(0xe2e2e6, 0.7), backRadius: 0.25, backHole: 0.76, backTeeth: 26, teeth: 40, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777c) }),
+        0xa2a2a7,
+        0x707075,
+        glassGears({ frontAlpha: 0.94, back: hex(0xe2e2e6, 0.7), backRadius: 0.25, backHole: 0.76, backTeeth: 26, teeth: 36, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777c) }),
       ),
       design(
         2026,
@@ -1213,14 +1222,17 @@ export const paper: HomeAppDef[] = [
           barX: 0.594, barWidth: 0.024, barInk: hex(0x1e9bf5), peakY: 0.355, marker: 0.1, markerInk: hex(0x1e9bf5), edge: FLAT,
         }),
       ),
+      // 2025-2026: every number here measured off the 1024 pt iOS 26 / macOS
+      // 26 artwork — background #1e1e1e, grid #343434, the cursor 0.0352
+      // wide, its glass head 0.239 across, centred on 0.604, 0.333.
       design(
         2025,
-        0x313131,
-        0x101010,
+        0x232323,
+        0x171717,
         stocksChart({
-          grid: [0.18, 0.4, 0.6, 0.8], gridInk: hex(0x4c4c4c), gridWidth: 0.01,
-          points: chartIOS26, fill: 0.1, lineWidth: 0.026, lineInk: hex(0xf4f4f4),
-          barX: 0.604, barWidth: 0.02, barInk: hex(0x29b6f6), peakY: 0.35, marker: 0.085, markerInk: hex(0x4fd3ff), glass: true, edge: FLAT,
+          grid: [0.18, 0.4, 0.6, 0.82], gridInk: hex(0x343434), gridWidth: 0.01,
+          points: chartIOS26, fill: 0.1, lineWidth: 0.03, lineInk: hex(0xf4f4f4),
+          barX: 0.604, barWidth: 0.0352, barInk: hex(0x04d6ee), peakY: 0.333, marker: 0.239, markerInk: hex(0x00daf9), ring: true, glass: true, edge: FLAT,
         }),
       ),
       design(
@@ -1228,9 +1240,9 @@ export const paper: HomeAppDef[] = [
         0x1f1f1f,
         0x161616,
         stocksChart({
-          grid: [0.18, 0.4, 0.6, 0.8], gridInk: hex(0x3e3e3e), gridWidth: 0.01,
-          points: chartIOS26, fill: 0.12, lineWidth: 0.026, lineInk: hex(0xf4f4f4),
-          barX: 0.604, barWidth: 0.02, barInk: hex(0x5fe0ff), peakY: 0.35, marker: 0.095, markerInk: hex(0x5fe0ff), ring: true, glass: true, edge: FLAT,
+          grid: [0.18, 0.4, 0.6, 0.82], gridInk: hex(0x3a3a3a), gridWidth: 0.01,
+          points: chartIOS26, fill: 0.12, lineWidth: 0.03, lineInk: hex(0xf8f8f8),
+          barX: 0.604, barWidth: 0.0352, barInk: hex(0x2ae4ff), peakY: 0.333, marker: 0.239, markerInk: hex(0x2ae4ff), ring: true, glass: true, edge: FLAT,
         }),
       ),
     ],

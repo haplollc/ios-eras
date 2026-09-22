@@ -39,6 +39,7 @@
 
 import type { Art, HomeAppDef, Kit, Stop, SymbolName } from './kit'
 import {
+  blur,
   circle,
   clip,
   design,
@@ -1150,51 +1151,59 @@ const pictureLoupe: Art = (k) => {
 
 // ================================================================ Siri
 
-/** iOS 27's Siri: a chrome sphere, charcoal above a bright wavy horizon and
- *  silver below it, in a 0.80 frame. */
+/** iOS 27's Siri: a chrome sphere in a 0.80 frame, charcoal above a
+ *  prism-split horizon and polished silver below it.
+ *
+ *  Measured off the 1024 pt Siri artwork (com.apple.campo), sphere-local:
+ *  - the horizon's white core runs (0.25, 0.453) (0.40, 0.476) (0.50, 0.514)
+ *    (0.60, 0.552) (0.75, 0.579) (0.80, 0.570) — it falls left to right the
+ *    whole way, it does not crest and it does not lift at the right rim;
+ *  - the split is ACROSS the band, not along it: warm (#F9B897) ~3 units
+ *    above the core, cyan (#CFF8F9) 1-2 below, blue (#95BEF9) ~4 below;
+ *  - the dark cap is LIGHTEST near the middle (#5D5C5F at (0.41, 0.36))
+ *    and darkest at the rim (#21242A), not the other way round;
+ *  - the silver is a pool, brightest at (0.50, 0.87) at #EDEFF1, falling to
+ *    #9FA1A3 out at the left and right rims — not a horizontal band. */
 const siriOrb: Art = (k) => {
   const s = 80
   const x0 = 10
   const y0 = 10
   const p = (x: number, y: number) => P(x0 + s * x, y0 + s * y)
-  // Up on the left, a dip right of centre, up again at the right rim.
-  const horizon = `M${p(-0.05, 0.56)} C${p(0.12, 0.52)} ${p(0.26, 0.45)} ${p(0.4, 0.46)} C${p(0.58, 0.47)} ${p(0.72, 0.6)} ${p(1.05, 0.44)}`
+  const u = (x: number) => x0 + s * x
+  const v = (y: number) => y0 + s * y
+  const horizon =
+    `M${p(-0.02, 0.42)} C${p(0.14, 0.446)} ${p(0.2, 0.452)} ${p(0.3, 0.456)}` +
+    ` C${p(0.42, 0.482)} ${p(0.5, 0.514)} ${p(0.62, 0.558)}` +
+    ` C${p(0.72, 0.578)} ${p(0.84, 0.572)} ${p(1.02, 0.578)}`
   const across = (list: Array<Stop | string>) => lin(k, list, x0, 0, x0 + s, 0)
-  const body =
-    circle(50, 50, s, rad(k, [hex(0x1d1e22), hex(0x2c2d31), hex(0x6a6b70)], x0 + s * 0.52, y0 + s * 0.42, s * 0.52)) +
-    path(
-      `${horizon} L${p(1.05, 1.1)} L${p(-0.05, 1.1)} Z`,
-      down(
-        k,
-        [
-          [hex(0x6f747c), 0.45],
-          [hex(0xb8bcc2), 0.6],
-          [hex(0xeff0f2), 0.74],
-          [hex(0xa2a6ab), 0.9],
-          [hex(0x6a6d72), 1],
-        ],
-        y0,
-        y0 + s,
-      ),
-    ) +
-    // The lit horizon: a soft glow under a thin iridescent line.
-    path(horizon, 'none', stroke(across([white(0), white(0.35), white(0.2), white(0)]), s * 0.05, 'stroke-linecap="round"')) +
+  /** The band, nudged off the core line and softened: a prism fringe. */
+  const fringe = (dy: number, colour: string, width: number, alpha: number, soft = 1.1) =>
+    `<g filter="${blur(k, soft)}">` +
     path(
       horizon,
       'none',
-      stroke(
-        across([
-          [white(0.1), 0.05],
-          [hex(0xffc690), 0.28],
-          ['#fff', 0.4],
-          [hex(0x9ec4ff), 0.52],
-          [white(0.75), 0.72],
-          [white(0.15), 0.95],
-        ]),
-        s * 0.016,
-        'stroke-linecap="round"',
-      ),
+      stroke(across([[fade(colour, 0), 0.02], [fade(colour, alpha), 0.24], [fade(colour, alpha), 0.9], [fade(colour, 0), 1]]), width, `stroke-linecap="round" transform="translate(0 ${n(dy)})"`),
     ) +
+    `</g>`
+  const body =
+    // The cap: light through the middle, falling to near-black at the rim.
+    circle(50, 50, s, rad(k, [hex(0x585a5f), hex(0x3d4045), hex(0x262a30), hex(0x1d2027)], u(0.45), v(0.42), s * 0.62)) +
+    // The chrome below the horizon, and the caustic pool it gathers into.
+    path(
+      `${horizon} L${p(1.02, 1.1)} L${p(-0.02, 1.1)} Z`,
+      down(k, [[hex(0x5b5f64), 0.44], [hex(0x7e8288), 0.62], [hex(0x999ca0), 0.8], [hex(0xa9acaf), 1]], y0, y0 + s),
+    ) +
+    `<g clip-path="${clip(k, path(`${horizon} L${p(1.02, 1.1)} L${p(-0.02, 1.1)} Z`, '#000'))}">` +
+    circle(u(0.5), v(0.875), s * 0.82, rad(k, [white(0.74), white(0.36), white(0)], u(0.5), v(0.875), s * 0.41)) +
+    `</g>` +
+    // The horizon, split across its thickness: warm above, cool below.
+    fringe(-s * 0.026, hex(0xf9a985), s * 0.05, 0.95, 1.6) +
+    fringe(s * 0.046, hex(0x8fbaf9), s * 0.055, 0.8, 1.9) +
+    fringe(s * 0.02, hex(0xbdf4f9), s * 0.038, 0.95, 1.3) +
+    fringe(-s * 0.004, hex(0xfff6e4), s * 0.03, 0.8, 1) +
+    fringe(0, '#fdfdfd', s * 0.022, 1, 0.55) +
+    // The flare where the band runs off the right rim.
+    circle(u(0.93), v(0.66), s * 0.38, rad(k, [white(0.85), white(0.3), white(0)], u(0.96), v(0.66), s * 0.19)) +
     ring(50, 50, s, s * 0.015, lin(k, [white(0.5), white(0), black(0.2)], x0, y0, x0 + s, y0 + s))
   return `<g clip-path="${clip(k, circle(50, 50, s, '#000'))}">${body}</g>`
 }
@@ -1440,7 +1449,10 @@ export const arrivals: HomeAppDef[] = [
     id: 'Passwords',
     designs: [
       flat(2024, 0xffffff, fannedKeys), // sampled
-      design(2025, 0x303131, 0x131313, glassKeys([0xe9b840, 0x5db462, 0x2f7cf6], 0.27, 0.185, 0.86)), // sampled
+      // Measured off the 1024 pt iOS 26 artwork: the tile is near-black
+      // (#1F1F1F to #0F0E0F, not #303131) and the keys are saturated —
+      // #FFCA3F, #31CD46 (ours read #5DB462), #2F7ED6.
+      design(2025, 0x1f1f1f, 0x0f0e0f, glassKeys([0xffca3f, 0x2ac544, 0x2f7ed6], 0.27, 0.185, 0.94)), // measured
       design(2026, 0x1f1f1f, 0x0f0f0f, glassKeys([0xffd242, 0x1fc04a, 0x2e83e6], 0.28, 0.19, 0.94)), // sampled
     ],
   },

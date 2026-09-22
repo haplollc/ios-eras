@@ -315,26 +315,33 @@ function skyMail(k: Kit, sky: Array<[number, number]>, seam: string, retina: boo
   return out + withFilter(envelopeMarkup, shadow(k, hex(0x0b2b66, 0.45), 1.2, 0, 1.4))
 }
 
-/** DockGlassEnvelope: iOS 26. An opaque white flap over a translucent
- *  blue-white pocket, bright seam lines and a thin specular outline. */
+/** DockGlassEnvelope: iOS 26. A cream-white flap over a pale blue pocket.
+ *
+ *  Measured off the 1024 pt artwork: the envelope is u 12.5-87.5, v 25-75,
+ *  its corners rounded by 6.5 units (not square), the flap's rounded apex
+ *  at v 59. There are NO seam lines and no specular outline — the pocket's
+ *  side panels are only a shade bluer than the trapezoid below the flap. */
 function glassEnvelope(k: Kit, b: Box): string {
-  const corner = 3
+  const corner = b.w * 0.087
   const outline = rrectPath(b.cx, b.cy, b.w, b.h, corner, true)
   const clipID = k.id('cp')
   k.def(`<clipPath id="${clipID}"><path d="${outline}"/></clipPath>`)
-  const rim = lineWidth(0.008, 0.5)
+  const rim = lineWidth(0.006, 0.5)
   const markup =
-    // The pocket: translucent blue-white glass, bluer toward the bottom.
-    path(outline, linear(k, [hex(0xdcebfe), hex(0xb4d2f6), hex(0x8db8f3)])) +
+    // The pocket: pale blue glass, the side panels a shade deeper.
+    path(outline, linear(k, [hex(0xd4e3f4), hex(0xbcd8f7), hex(0xd2e4fb)])) +
     `<g clip-path="url(#${clipID})">` +
+    // The trapezoid below the flap catches more light than the sides.
+    path(
+      `M${P(b.x0, b.y1)} L${P(b.x0 + b.w * 0.33, b.y0 + b.h * 0.5)} L${P(b.x1 - b.w * 0.33, b.y0 + b.h * 0.5)} L${P(b.x1, b.y1)} Z`,
+      hex(0xffffff, 0.3),
+    ) +
     // A soft blue shade cast by the flap onto the pocket.
-    path(flapPath(b, 0.68, 0.09), hex(0x2f6fd6, 0.22), 'transform="translate(0 1.2)"') +
-    // The flap: opaque white, a rounded apex about two thirds down.
-    path(flapPath(b, 0.64, 0.09), frameLinear(k, ['#fff', hex(0xf4f8fd)], b.cx, b.y0, b.cx, b.y1)) +
+    path(flapPath(b, 0.735, 0.12), hex(0x2f6fd6, 0.2), 'transform="translate(0 1.4)"') +
+    // The flap: cream-white, its rounded apex a little past two thirds down.
+    path(flapPath(b, 0.735, 0.12), frameLinear(k, [hex(0xfbfbfb), hex(0xeef3fa)], b.cx, b.y0, b.cx, b.y1)) +
     `</g>` +
-    // The lower seams read as bright glowing lines, not cut-outs.
-    stroke(seamsPath(b, 0.64, 0.33, 0.09), 'rgba(255,255,255,0.9)', lineWidth(0.009, 0.5), roundCaps) +
-    stroke(rrectPath(b.cx, b.cy, b.w - rim, b.h - rim, corner - rim / 2, true), 'rgba(255,255,255,0.95)', rim)
+    stroke(rrectPath(b.cx, b.cy, b.w - rim, b.h - rim, corner - rim / 2, true), 'rgba(255,255,255,0.35)', rim)
   return withFilter(markup, shadow(k, hex(0x0a3c9a, 0.28), 2, 0, 1.6))
 }
 
@@ -804,7 +811,7 @@ export const dock: HomeAppDef[] = [
       design(2024, 0x1d70f2, 0x1ac7fc, () => envelope(box(0.145, 0.272, 0.855, 0.728), hex(0x1b9cf7), 0.02, 0.012, 0.07)),
       // iOS 26-27: gradient flips light-on-top; a glass envelope with an
       // opaque white flap over a translucent blue pocket.
-      design(2025, 0x57bef4, 0x1d74fd, (k) => glassEnvelope(k, box(0.127, 0.25, 0.873, 0.749))),
+      design(2025, 0x0096fd, 0x0075ff, (k) => glassEnvelope(k, box(0.125, 0.25, 0.875, 0.75))),
     ],
   },
 
@@ -850,44 +857,50 @@ export const dock: HomeAppDef[] = [
           white: '#fff',
         }),
       ),
-      // iOS 26: off-white glass tile, smaller lens (0.80), 48 pale ticks
-      // (24 long, 24 short, measured 7.5 degrees apart), the needle back at
-      // 45 degrees.
+      // iOS 26: off-white glass tile, smaller lens (0.80). Measured off the
+      // 1024 pt artwork: 32 ticks 11.25 degrees apart, NOT 48 — the long
+      // ones in to 0.75 of the radius, the short to 0.80, both stopping at
+      // 0.905, well short of the rim, and BRIGHT CYAN (#2FFBFF), not white.
+      // The face runs #00AEFF to #0084FF, the needle sits at 45 degrees
+      // with a pale red hub cap 0.163 of the radius across.
       design(2025, 0xffffff, 0xececec, (k) =>
         compass(k, {
           disc: 0.8,
-          face: [hex(0x5abdf9), hex(0x1d74fd)],
-          ticks: 48,
-          tickInk: hex(0xd6ecfe, 0.85),
+          face: [hex(0x00aeff), hex(0x0084ff)],
+          ticks: 32,
+          tickInk: hex(0x2ffbff, 0.95),
+          longInner: 0.75,
           shortInner: 0.8,
-          tickWidth: 0.009,
+          tickOuter: 0.905,
+          tickWidth: 0.0119,
           roundTicks: true,
           angle: 45,
-          tip: 0.91,
-          base: 0.23,
-          red: hex(0xff413b),
-          white: hex(0xebf5ff),
+          tip: 0.95,
+          base: 0.28,
+          red: hex(0xf80100),
+          white: hex(0xf6f6f6),
+          hub: 0.163,
           glass: true,
         }),
       ),
-      // iOS 27: brighter cyan-blue, 36 finer ticks, a bolder needle on a
-      // visible red hub.
+      // iOS 27: the same dial, a touch brighter and the ticks a touch finer.
       design(2026, 0xf4f5f7, 0xecf0f1, (k) =>
         compass(k, {
           disc: 0.8,
-          face: [hex(0x00abf1), hex(0x0b81e3)],
-          ticks: 36,
-          tickInk: hex(0xd5ffff, 0.9),
-          longInner: 0.76,
-          shortInner: 0.82,
-          tickWidth: 0.008,
+          face: [hex(0x14b8ff), hex(0x0b8bf3)],
+          ticks: 32,
+          tickInk: hex(0x62ffff, 0.95),
+          longInner: 0.75,
+          shortInner: 0.81,
+          tickOuter: 0.9,
+          tickWidth: 0.011,
           roundTicks: true,
           angle: 45,
-          tip: 0.88,
-          base: 0.25,
+          tip: 0.94,
+          base: 0.27,
           red: hex(0xfb0a0a),
-          white: hex(0xecf4f4),
-          hub: 0.18,
+          white: hex(0xf2f6f8),
+          hub: 0.17,
           glass: true,
         }),
       ),

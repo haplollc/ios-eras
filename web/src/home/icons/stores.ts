@@ -1048,66 +1048,100 @@ function tvSet(k: Kit): string {
 type WordmarkLook = 'white' | 'iridescent' | 'muted'
 
 // The wordmark's layout: HStack(alignment: .lastTextBaseline, spacing: 0) of
-// the apple.logo symbol at 0.413 medium, lifted 0.033 so it sits ON the
-// baseline, and "tv" at 0.535 semibold, kerned -0.012; the pair raised
-// 0.037 and nudged 0.011 left. SwiftUI's text and symbol metrics are not
-// available here, so the ink boxes are fitted to Apple's own artwork
-// (measured off the shipping Apple TV icon, as fractions of the tile):
-// the apple x 0.119-0.423 y 0.271-0.653, the t x 0.455-0.602 y 0.313, the v
-// to x 0.875 - all three sharing one baseline at 0.653. `frame` is the
-// HStack's frame, which both 26.1+ gradients span: symbol margins and the
-// text's ascender/descender (0.9668 / 0.2109 of 53.5) round the ink.
-// The web's SF (Text proportions) sets "tv" about 3% wider than iOS's SF
-// Display at this size, with a tighter t-v gap, so size, squeeze and
-// spacing are fitted to the measured ink rather than taken from the Swift.
+// the apple over a lowercase "tv", sharing one baseline. SwiftUI's text
+// metrics are not available here, so the ink boxes are fitted to Apple's own
+// artwork instead: every number below is measured off the shipping Apple TV
+// icon (macOS 26 Tahoe's TV.app at 2048 px, whose mark is the late-2025
+// rebrand), as a fraction of the tile x 100 -
+//   apple x 11.73-42.89  y 27.64-66.10   (leaf 27.64-36.53, body from 36.89)
+//   t     x 45.63-60.51  y 31.90-65.98   stem x 49.64-55.41, crossbar at y 41
+//   v     x 63.00-88.21  y 38.34-65.74   arms 6.01 and 5.96 wide at y 40
+// The web's SF (Text proportions) is heavier and a touch wider than iOS's SF
+// Display at this size, so size, weight, squeeze and spacing are fitted to
+// that measured ink rather than taken from the Swift: 540 rather than 600
+// lands the t's stem at 0.0589 of the tile against Apple's 0.0577.
 const mark = {
-  apple: { x0: 12.22, x1: 43.33, y0: 27.67, y1: 66.73 },
-  tv: { x: 45.8, baseline: 66.2, size: 52.7, squeeze: 0.975, spacing: -0.1 },
-  frame: { left: 8.4, right: 89.4, top: 66.2 - 53.5 * 0.9668, bottom: 66.2 + 53.5 * 0.2109 },
+  apple: { x0: 11.73, x1: 42.89, y0: 27.64, y1: 66.1 },
+  tv: { x: 45.18, baseline: 65.52, size: 51.84, weight: 540, squeeze: 1.0058, spacing: 0.079 },
 }
 
-/** The apple, fitted to the measured box. The stand-in (Phosphor's
- *  apple-logo, 208 x 224 in its 256 box, centred at 120, 112) is rounder
- *  than SF's, so it is narrowed to the SF glyph's proportions. */
+// The Apple logo's own outline, in a unit box with y down. Traced from the
+// system font's Apple glyph (U+F8FF) with CTFontCreatePathForGlyph, which is
+// the same drawing SF's apple.logo uses: rasterised, the two agree to IoU
+// 0.996, and both agree with the shipping TV icon's apple to IoU 0.992. (The
+// old stand-in was Phosphor's apple-logo squeezed sideways, whose leaf reads
+// as a crescent floating over a blob at icon size.) Body first, then leaf.
+const APPLE_OUTLINE =
+  'M0.7248 0.2418 Q0.7423 0.2418 0.7843 0.2463 Q0.8263 0.2508 0.8767 0.2718 Q0.927 0.2927 0.9683 0.3411 ' +
+  'Q0.9659 0.343 0.9453 0.3549 Q0.9247 0.3669 0.8993 0.3897 Q0.8739 0.4126 0.8549 0.4478 Q0.8358 0.4829 0.8358 0.5313 ' +
+  'Q0.8358 0.5867 0.86 0.6254 Q0.8842 0.6641 0.9163 0.6876 Q0.9485 0.7112 0.9734 0.7221 Q0.9984 0.7331 1 0.7337 ' +
+  'Q0.9992 0.7363 0.9798 0.7795 Q0.9603 0.8227 0.9159 0.8756 Q0.8771 0.9213 0.8323 0.96 Q0.7875 0.9987 0.7248 0.9987 ' +
+  'Q0.6828 0.9987 0.6558 0.9887 Q0.6289 0.9787 0.6003 0.9687 Q0.5718 0.9587 0.5234 0.9587 ' +
+  'Q0.4766 0.9587 0.4453 0.9691 Q0.414 0.9794 0.3858 0.9897 Q0.3577 1 0.3196 1 Q0.2617 1 0.2181 0.9626 ' +
+  'Q0.1745 0.9252 0.1285 0.873 Q0.0753 0.8111 0.0377 0.7218 Q0 0.6325 0 0.5416 Q0 0.4442 0.0452 0.3781 ' +
+  'Q0.0904 0.3121 0.1614 0.2782 Q0.2324 0.2444 0.3085 0.2444 Q0.3489 0.2444 0.3846 0.255 Q0.4203 0.2656 0.4516 0.2766 ' +
+  'Q0.483 0.2876 0.5083 0.2876 Q0.5329 0.2876 0.5654 0.276 Q0.5979 0.2643 0.6384 0.2531 Q0.6788 0.2418 0.7248 0.2418 Z ' +
+  'M0.6812 0.1599 Q0.6503 0.1902 0.6035 0.2105 Q0.5567 0.2308 0.5147 0.2308 Q0.5059 0.2308 0.498 0.2295 ' +
+  'Q0.4972 0.2276 0.4964 0.2224 Q0.4956 0.2173 0.4956 0.2115 Q0.4956 0.1728 0.5163 0.1364 Q0.5369 0.0999 0.563 0.0761 ' +
+  'Q0.5964 0.0438 0.6471 0.0226 Q0.6979 0.0013 0.7439 0 Q0.7462 0.0084 0.7462 0.02 Q0.7462 0.0587 0.728 0.0951 ' +
+  'Q0.7098 0.1315 0.6812 0.1599 Z'
+
+/** The apple, its traced outline scaled into the measured ink box. */
 function markApple(fill: string): string {
   const a = mark.apple
-  const s = (a.y1 - a.y0) / 224
-  const size = (s * 256) / 1.18
-  const cx = (a.x0 + a.x1) / 2
-  const cy = (a.y0 + a.y1) / 2
-  const squeeze = (a.x1 - a.x0) / (208 * s)
-  return `<g transform="translate(${n(cx)} 0) scale(${n(squeeze)} 1) translate(${n(-cx)} 0)">${symbol('apple.logo', fill, size, cx + 8 * s, cy + 16 * s)}</g>`
+  return `<g transform="translate(${n(a.x0)} ${n(a.y0)}) scale(${n(a.x1 - a.x0)} ${n(a.y1 - a.y0)})">${path(APPLE_OUTLINE, fill)}</g>`
 }
 
 /** The Apple TV mark's glyphs, in one fill. */
 function markGlyphs(fill: string): string {
   return (
     markApple(fill) +
-    `<text x="${mark.tv.x}" y="${mark.tv.baseline}" transform="translate(${mark.tv.x} 0) scale(${mark.tv.squeeze} 1) translate(${-mark.tv.x} 0)" font-family="${systemFont.replace(/'/g, '&apos;')}" font-size="${mark.tv.size}" font-weight="600" letter-spacing="${mark.tv.spacing}" fill="${fill}">tv</text>`
+    `<text x="${mark.tv.x}" y="${mark.tv.baseline}" transform="translate(${mark.tv.x} 0) scale(${mark.tv.squeeze} 1) translate(${-mark.tv.x} 0)" font-family="${systemFont.replace(/'/g, '&apos;')}" font-size="${mark.tv.size}" font-weight="${mark.tv.weight}" letter-spacing="${mark.tv.spacing}" fill="${fill}">tv</text>`
   )
 }
 
+// The 26.1 mark is dominantly WHITE: colour is a sweep that only comes up
+// through the bottom third. Both gradients are fitted to the same 2048 px
+// artwork, and their offsets are tile fractions, so each spans the whole
+// tile rather than the mark's own frame.
+//
+// SWEEP: violet under the apple's left lobe, through cyan and green to
+// yellow in the t and pink through the v. Read straight off the artwork's
+// bottom band (y > 0.598, where the white has run out, so what is there IS
+// the sweep), as hue/saturation at full value: 255deg s0.49 at x 0.16,
+// 216/0.40 at 0.25, 200/0.47 at 0.31, 96/0.44 at 0.51, 43/0.59 at 0.57,
+// 8/0.47 at 0.71, 339/0.33 at 0.80. The left end runs off the bottom of the
+// apple's lobe, so its violet is taken from higher up and un-mixed instead.
+const SWEEP: Array<[number, number]> = [
+  [0.118, 0x8861ff], [0.16, 0xa282ff], [0.2, 0xa89dff], [0.25, 0x99c3ff],
+  [0.31, 0x87d8ff], [0.37, 0x8cffed], [0.44, 0x8bffa3], [0.51, 0xbdff8f],
+  [0.57, 0xffd568], [0.63, 0xffb478], [0.7, 0xff9a84], [0.77, 0xffa2b2],
+  [0.84, 0xffabd2], [0.882, 0xffadd8],
+]
+
+// WHITE CAP: opaque to y 0.43 - the top 40% of the mark carries no colour at
+// all - then down to nothing by 0.605. Apple's own saturation by tile row is
+// 0.004 at y 0.39, 0.019 at 0.43, 0.066 at 0.47, 0.167 at 0.51, 0.305 at
+// 0.55, 0.409 at 0.59, 0.474 at 0.63; ours was already at 0.091 by y 0.43,
+// which is what washed the whole mark out.
+const CAP: Array<[number, number]> = [
+  [0, 1], [0.43, 1], [0.46, 0.94], [0.49, 0.856], [0.52, 0.683], [0.55, 0.437], [0.58, 0.178], [0.605, 0], [1, 0],
+]
+
+/** 2026's muted sibling: the same sweep dimmed to 0.86 of its value. */
+const dim = (c: number, f: number): number =>
+  (Math.round(((c >> 16) & 0xff) * f) << 16) | (Math.round(((c >> 8) & 0xff) * f) << 8) | Math.round((c & 0xff) * f)
+
 /** StoresTVWordmark: the logo and a lowercase "tv". From iOS 26.1 the letters
- *  are white on top and iridescent along the bottom (violet, cyan, green
- *  under the logo; yellow in the t; pink in the v), both gradients spanning
- *  the whole mark, with a soft shadow. */
+ *  are white with an iridescent sweep rising through their bottom third
+ *  (violet, cyan, green under the logo; yellow in the t; pink in the v), both
+ *  gradients spanning the tile, with a soft shadow. */
 function tvWordmark(k: Kit, look: WordmarkLook): string {
   if (look === 'white') return markGlyphs('#fff')
-  const sweepAt = [0, 0.13, 0.25, 0.36, 0.52, 0.61, 0.71, 1]
-  const colours =
-    look === 'iridescent'
-      ? [0xa88dfb, 0xa8d9fe, 0x86e0e6, 0x77deb0, 0xc9eb92, 0xfdd162, 0xf7a8a4, 0xf3aac6]
-      : [0x8974d7, 0xa2c6ea, 0x8dcbd5, 0x78be97, 0xb7d085, 0xdbba61, 0xe2999e, 0xda9fb8]
+  const f = look === 'iridescent' ? 1 : 0.86
   const top = look === 'iridescent' ? '#ffffff' : hex(0xe6e6e8)
-  const sweep = spanLinear(
-    k,
-    colours.map((c, i): Stop => [hex(c), sweepAt[i]]),
-    mark.frame.left,
-    0,
-    mark.frame.right,
-    0,
-  )
-  const cap = spanLinear(k, [[top, 0], [top, 0.4], [fade(top, 0), 0.7]], 0, mark.frame.top, 0, mark.frame.bottom)
+  const sweep = spanLinear(k, SWEEP.map(([at, c]): Stop => [hex(dim(c, f)), at]), 0, 0, 100, 0)
+  const cap = spanLinear(k, CAP.map(([at, a]): Stop => [fade(top, a), at]), 0, 0, 0, 100)
   const glyphs = mask(k, markGlyphs('#fff'))
   const box = rect(50, 50, 100, 100, sweep) + rect(50, 50, 100, 100, cap)
   return `<g filter="${shadow(k, hex(0x000000, 0.45), 2, 0, 1.4)}"><g mask="${glyphs}">${box}</g></g>`

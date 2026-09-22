@@ -230,10 +230,12 @@ extension HomeApp {
                 PaperNestedGear(dark: hex(0x2E2E2F), inner: hex(0xB4B4B6), top: hex(0xE4E5E9), bottom: hex(0x8E8E94), scale: 0.95)
                     .frame(width: edge, height: edge)
             }),
-            // iOS 26: Liquid Glass; a white glass gear of 36 teeth, a grey gear seen through its windows.
-            design(2025, 0xA7A7AD, 0x5F5F63, art { edge in                                                // measured
+            // iOS 26: Liquid Glass; a white glass gear, a grey gear seen through its windows.
+            // Measured off the 1024 pt artwork: 36 teeth (we drew 40) in a band from r 0.35 to
+            // 0.405, on a plate running #99999C to #6A696E — ours bottomed out 17 levels too dark.
+            design(2025, 0xA2A2A7, 0x707075, art { edge in                                                // measured
                 PaperGlassGears(frontAlpha: 0.94, back: hex(0xE2E2E6, 0.70), backRadius: 0.25, backHole: 0.76, backTeeth: 26,
-                                teeth: 40, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777C))
+                                teeth: 36, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777C))
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: flatter grey; the front gear thicker and more translucent, the back gear smaller.
@@ -346,18 +348,20 @@ extension HomeApp {
                                  barX: 0.594, barWidth: 0.024, barInk: hex(0x1E9BF5), peakY: 0.355, marker: 0.10, markerInk: hex(0x1E9BF5))
                     .frame(width: edge, height: edge)
             }),
-            // iOS 26: Liquid Glass; the line a raised white tube, the marker a cyan glass sphere.
-            design(2025, 0x313131, 0x101010, art { edge in                                                // measured
-                PaperStocksChart(grid: [0.18, 0.40, 0.60, 0.80], gridInk: hex(0x4C4C4C), gridWidth: 0.01,
-                                 points: PaperStocksChart.ios26, fill: 0.10, lineWidth: 0.026, lineInk: hex(0xF4F4F4),
-                                 barX: 0.604, barWidth: 0.02, barInk: hex(0x29B6F6), peakY: 0.35, marker: 0.085, markerInk: hex(0x4FD3FF), glass: true)
+            // iOS 26: Liquid Glass; the line a raised white tube, the cursor head a glass torus.
+            // Every number measured off the 1024 pt artwork: background #1E1E1E, grid #343434,
+            // the cursor 0.0352 wide, its head 0.239 across, centred on (0.604, 0.333).
+            design(2025, 0x232323, 0x171717, art { edge in                                                // measured
+                PaperStocksChart(grid: [0.18, 0.40, 0.60, 0.82], gridInk: hex(0x343434), gridWidth: 0.01,
+                                 points: PaperStocksChart.ios26, fill: 0.10, lineWidth: 0.030, lineInk: hex(0xF4F4F4),
+                                 barX: 0.604, barWidth: 0.0352, barInk: hex(0x04D6EE), peakY: 0.333, marker: 0.239, markerInk: hex(0x00DAF9), ring: true, glass: true)
                     .frame(width: edge, height: edge)
             }),
-            // iOS 27: brighter cyan; the sphere drawn as a ring.
+            // iOS 27: the same head, a brighter cyan on a flatter black.
             design(2026, 0x1F1F1F, 0x161616, art { edge in                                                // documented (tentative)
-                PaperStocksChart(grid: [0.18, 0.40, 0.60, 0.80], gridInk: hex(0x3E3E3E), gridWidth: 0.01,
-                                 points: PaperStocksChart.ios26, fill: 0.12, lineWidth: 0.026, lineInk: hex(0xF4F4F4),
-                                 barX: 0.604, barWidth: 0.02, barInk: hex(0x5FE0FF), peakY: 0.35, marker: 0.095, markerInk: hex(0x5FE0FF), ring: true, glass: true)
+                PaperStocksChart(grid: [0.18, 0.40, 0.60, 0.82], gridInk: hex(0x3A3A3A), gridWidth: 0.01,
+                                 points: PaperStocksChart.ios26, fill: 0.12, lineWidth: 0.030, lineInk: hex(0xF8F8F8),
+                                 barX: 0.604, barWidth: 0.0352, barInk: hex(0x2AE4FF), peakY: 0.333, marker: 0.239, markerInk: hex(0x2AE4FF), ring: true, glass: true)
                     .frame(width: edge, height: edge)
             }),
         ]),
@@ -1421,15 +1425,27 @@ private struct PaperStocksChart: View {
                     .stroke(lineInk, style: StrokeStyle(lineWidth: s * lineWidth, lineCap: .round, lineJoin: .round))
                     .shadow(color: .black.opacity(glass ? 0.5 : 0), radius: s * 0.012, y: s * 0.014)
                 if ring {
-                    Circle().fill(hex(0x2E8C9C))
+                    // iOS 26's cursor head: a glass torus. Measured off the
+                    // 1024 pt artwork — outer 0.239 of the tile, the bright
+                    // core 0.565 of that, the body a dark teal with a darker
+                    // edge at the core, the cursor bright across the ring.
+                    Circle().fill(hex(0x007987))
                         .frame(width: s * marker, height: s * marker)
-                        .shadow(color: .black.opacity(0.45), radius: s * 0.012, y: s * 0.012)
+                        .shadow(color: .black.opacity(0.5), radius: s * 0.014, y: s * 0.014)
                         .position(x: s * barX, y: s * peakY)
-                    Circle().strokeBorder(markerInk.opacity(0.55), lineWidth: s * marker * 0.12)
+                    Circle().strokeBorder(.white.opacity(0.2), lineWidth: s * marker * 0.05)
                         .frame(width: s * marker, height: s * marker)
                         .position(x: s * barX, y: s * peakY)
-                    Circle().fill(markerInk)
-                        .frame(width: s * marker * 0.62, height: s * marker * 0.62)
+                    Rectangle().fill(barInk.opacity(0.9))
+                        .frame(width: max(0.8, s * barWidth), height: s * marker)
+                        .position(x: s * barX, y: s * peakY)
+                    Circle().strokeBorder(hex(0x003F50), lineWidth: s * marker * 0.055)
+                        .frame(width: s * marker * 0.63, height: s * marker * 0.63)
+                        .position(x: s * barX, y: s * peakY)
+                    Circle().fill(RadialGradient(colors: [hex(0x00E2FF), hex(0x00D0EE)],
+                                                 center: UnitPoint(x: 0.42, y: 0.36),
+                                                 startRadius: 0, endRadius: s * marker * 0.565 * 0.9))
+                        .frame(width: s * marker * 0.565, height: s * marker * 0.565)
                         .position(x: s * barX, y: s * peakY)
                 } else {
                     if glass {

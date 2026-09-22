@@ -30,6 +30,83 @@
     <!-- Relative, so the same build works from a domain root or a sub-path. -->
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+
+    <!--
+      Stale-cache guard. GitHub Pages serves this HTML with max-age=600, while the
+      script and stylesheet names are content-hashed and the previous deploy's files
+      are deleted. So for up to ten minutes after a deploy a returning visitor can
+      run an OLD index.html whose assets now 404, and see a blank or half-drawn page.
+
+      If a module or stylesheet fails to load — the entry script, or a chunk imported
+      later — reload once at a URL the HTTP cache has no entry for (one throwaway
+      parameter, every real parameter kept), which fetches the fresh HTML. It runs
+      once per visit, so a genuinely broken or offline site never loops, and the
+      parameter is taken back out of the address bar as soon as the app boots.
+
+      Inline on purpose: an external file would be served from the stale cache too.
+    -->
+    <script>
+      ;(function () {
+        var PARAM = '_fresh'
+        var KEY = 'iosEras:freshened'
+        var spent = new URL(location.href).searchParams.has(PARAM)
+        var leaving = false // a recovery is already under way on this page
+        try {
+          if (sessionStorage.getItem(KEY)) spent = true
+        } catch (e) {}
+
+        // Chrome, Safari, Firefox and Vite's preload helper, respectively.
+        function isLoadFailure(reason) {
+          var msg = reason && reason.message ? reason.message : String(reason == null ? '' : reason)
+          return /dynamically imported module|importing a module script failed|module script failed|unable to preload/i.test(msg)
+        }
+
+        // true means "this is being dealt with": either the reload is under way,
+        // or one is starting now. false means the failure is the page's own.
+        function recover() {
+          if (leaving) return true // the same 404 reaching us twice (preload link, then import)
+          if (spent || navigator.onLine === false) return false
+          spent = true
+          leaving = true
+          try {
+            sessionStorage.setItem(KEY, '1')
+          } catch (e) {}
+          var url = new URL(location.href)
+          url.searchParams.set(PARAM, Date.now().toString(36))
+          location.replace(url.href) // replace, so Back does not return to the broken page
+          return true
+        }
+
+        // The entry <script> or the stylesheet 404ing. A resource error does not
+        // bubble, so it has to be caught in the capture phase.
+        addEventListener(
+          'error',
+          function (e) {
+            var el = e.target
+            if (!el || el === window || !el.tagName) return
+            if (el.tagName === 'SCRIPT') recover()
+            else if (el.tagName === 'LINK' && /stylesheet|modulepreload|preload/i.test(el.rel || '')) recover()
+          },
+          true,
+        )
+
+        // A lazily imported chunk 404ing after the page has already booted.
+        addEventListener('unhandledrejection', function (e) {
+          if (isLoadFailure(e.reason) && recover()) e.preventDefault() // the reload is the answer; no need to shout
+        })
+
+        // Called by src/main.ts.
+        window.__erasRecover = function (err) {
+          return isLoadFailure(err) ? recover() : false
+        }
+        window.__erasBooted = function () {
+          var url = new URL(location.href)
+          if (!url.searchParams.has(PARAM)) return
+          url.searchParams.delete(PARAM)
+          history.replaceState(history.state, '', url.pathname + url.search + url.hash)
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

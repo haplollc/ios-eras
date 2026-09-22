@@ -115,10 +115,11 @@ extension HomeApp {
                 DockEnvelope(edge: edge, box: DockBox(0.145, 0.272, 0.855, 0.728),
                              seam: hex(0x1B9CF7), seamWidth: 0.02, corner: 0.012, apexRound: 0.07)
             }),
-            // iOS 26-27: gradient flips light-on-top; a glass envelope with an
-            // opaque white flap over a translucent blue pocket.
-            design(2025, 0x57BEF4, 0x1D74FD, art { edge in
-                DockGlassEnvelope(edge: edge, box: DockBox(0.127, 0.250, 0.873, 0.749))
+            // iOS 26-27: gradient flips light-on-top; a glass envelope with a
+            // cream flap over a pale blue pocket. Background measured #0096FD
+            // to #0075FF, the envelope u 12.5-87.5 by v 25-75.
+            design(2025, 0x0096FD, 0x0075FF, art { edge in
+                DockGlassEnvelope(edge: edge, box: DockBox(0.125, 0.250, 0.875, 0.750))
             }),
         ]),
 
@@ -147,24 +148,26 @@ extension HomeApp {
                             tickInk: .white, tickWidth: 0.009, roundTicks: true,
                             angle: 50, tip: 0.92, base: 0.23, red: hex(0xFF3B30), white: .white)
             }),
-            // iOS 26: off-white glass tile, smaller lens (0.80), 48 pale
-            // ticks (24 long, 24 short, measured 7.5 degrees apart), the
-            // needle back at 45 degrees.
+            // iOS 26: off-white glass tile, smaller lens (0.80). Measured off
+            // the 1024 pt artwork: 32 ticks 11.25 degrees apart, NOT 48 — the
+            // long ones in to 0.75 of the radius, the short to 0.80, both
+            // stopping at 0.905, well short of the rim, and BRIGHT CYAN
+            // (#2FFBFF), not white. The face runs #00AEFF to #0084FF, the
+            // needle sits at 45 degrees on a pale red hub cap 0.163 across.
             design(2025, 0xFFFFFF, 0xECECEC, art { edge in
-                DockCompass(edge: edge, disc: 0.80, face: [hex(0x5ABDF9), hex(0x1D74FD)],
-                            ticks: 48, tickInk: hex(0xD6ECFE, 0.85), shortInner: 0.80,
-                            tickWidth: 0.009, roundTicks: true,
-                            angle: 45, tip: 0.91, base: 0.23, red: hex(0xFF413B), white: hex(0xEBF5FF),
-                            glass: true)
+                DockCompass(edge: edge, disc: 0.80, face: [hex(0x00AEFF), hex(0x0084FF)],
+                            ticks: 32, tickInk: hex(0x2FFBFF, 0.95), longInner: 0.75, shortInner: 0.80,
+                            tickOuter: 0.905, tickWidth: 0.0119, roundTicks: true,
+                            angle: 45, tip: 0.95, base: 0.28, red: hex(0xF80100), white: hex(0xF6F6F6),
+                            hub: 0.163, glass: true)
             }),
-            // iOS 27: brighter cyan-blue, 36 finer ticks, a bolder needle on a
-            // visible red hub.
+            // iOS 27: the same dial, a touch brighter and the ticks a touch finer.
             design(2026, 0xF4F5F7, 0xECF0F1, art { edge in
-                DockCompass(edge: edge, disc: 0.80, face: [hex(0x00ABF1), hex(0x0B81E3)],
-                            ticks: 36, tickInk: hex(0xD5FFFF, 0.9), longInner: 0.76, shortInner: 0.82,
-                            tickWidth: 0.008, roundTicks: true,
-                            angle: 45, tip: 0.88, base: 0.25, red: hex(0xFB0A0A), white: hex(0xECF4F4),
-                            hub: 0.18, glass: true)
+                DockCompass(edge: edge, disc: 0.80, face: [hex(0x14B8FF), hex(0x0B8BF3)],
+                            ticks: 32, tickInk: hex(0x62FFFF, 0.95), longInner: 0.75, shortInner: 0.81,
+                            tickOuter: 0.90, tickWidth: 0.011, roundTicks: true,
+                            angle: 45, tip: 0.94, base: 0.27, red: hex(0xFB0A0A), white: hex(0xF2F6F8),
+                            hub: 0.17, glass: true)
             }),
         ]),
 
@@ -695,32 +698,54 @@ private struct DockSkyMail: View {
     }
 }
 
-/// iOS 26 Mail: an opaque white flap over a translucent blue-white pocket,
-/// bright seam lines and a thin specular outline.
+/// The lit trapezoid below the flap: the bottom edge up to where the flap's
+/// limbs cross the pocket, `meetX` along the width.
+private struct DockEnvelopePocket: Shape {
+    var meetX: Double
+
+    func path(in rect: CGRect) -> Path {
+        func p(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: rect.minX + rect.width * x, y: rect.minY + rect.height * y) }
+        var path = Path()
+        path.move(to: p(0, 1))
+        path.addLine(to: p(meetX, 0.5))
+        path.addLine(to: p(1 - meetX, 0.5))
+        path.addLine(to: p(1, 1))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// iOS 26 Mail: a cream-white flap over a pale blue pocket.
+///
+/// Measured off the 1024 pt artwork: the envelope is u 12.5-87.5, v 25-75,
+/// its corners rounded by 6.5 units (not square), the flap's rounded apex at
+/// v 59. There are NO seam lines and no specular outline — the pocket's side
+/// panels are only a shade bluer than the trapezoid below the flap.
 private struct DockGlassEnvelope: View {
     let edge: CGFloat
     let box: DockBox
 
     var body: some View {
-        let corner = edge * 0.03
+        let corner = edge * 0.0653
         ZStack {
-            // The pocket: translucent blue-white glass, bluer toward the bottom.
+            // The pocket: pale blue glass, the side panels a shade deeper.
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .fill(LinearGradient(colors: [hex(0xDCEBFE), hex(0xB4D2F6), hex(0x8DB8F3)], startPoint: .top, endPoint: .bottom))
+                .fill(LinearGradient(colors: [hex(0xD4E3F4), hex(0xBCD8F7), hex(0xD2E4FB)], startPoint: .top, endPoint: .bottom))
+            // The trapezoid below the flap catches more light than the sides.
+            DockEnvelopePocket(meetX: 0.33)
+                .fill(.white.opacity(0.3))
+                .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
             // A soft blue shade cast by the flap onto the pocket.
-            DockEnvelopeFlap(apex: 0.68, apexRound: 0.09)
-                .fill(hex(0x2F6FD6, 0.22))
-                .offset(y: edge * 0.012)
+            DockEnvelopeFlap(apex: 0.735, apexRound: 0.12)
+                .fill(hex(0x2F6FD6, 0.20))
+                .offset(y: edge * 0.014)
                 .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
-            // The flap: opaque white, a rounded apex about two thirds down.
-            DockEnvelopeFlap(apex: 0.64, apexRound: 0.09)
-                .fill(LinearGradient(colors: [.white, hex(0xF4F8FD)], startPoint: .top, endPoint: .bottom))
+            // The flap: cream-white, its rounded apex a little past two thirds down.
+            DockEnvelopeFlap(apex: 0.735, apexRound: 0.12)
+                .fill(LinearGradient(colors: [hex(0xFBFBFB), hex(0xEEF3FA)], startPoint: .top, endPoint: .bottom))
                 .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
-            // The lower seams read as bright glowing lines, not cut-outs.
-            DockEnvelopeSeams(apex: 0.64, meetX: 0.33, apexRound: 0.09)
-                .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: max(0.5, edge * 0.009), lineCap: .round, lineJoin: .round))
             RoundedRectangle(cornerRadius: corner, style: .continuous)
-                .strokeBorder(.white.opacity(0.95), lineWidth: max(0.5, edge * 0.008))
+                .strokeBorder(.white.opacity(0.35), lineWidth: max(0.5, edge * 0.006))
         }
         .dockBox(box, edge)
         .compositingGroup()

@@ -21,4 +21,19 @@ async function boot() {
   mountApp(root, params)
 }
 
-boot()
+declare global {
+  interface Window {
+    /** Both are defined by the stale-cache guard inline in index.html. */
+    __erasRecover?: (err: unknown) => boolean
+    __erasBooted?: () => void
+  }
+}
+
+boot().then(
+  () => window.__erasBooted?.(),
+  (err) => {
+    // A chunk deleted by a deploy: the guard reloads once from a fresh URL.
+    // Anything else is a real failure and must stay visible.
+    if (!window.__erasRecover?.(err)) throw err
+  },
+)

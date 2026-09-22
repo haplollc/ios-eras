@@ -212,8 +212,11 @@ extension HomeApp {
 
         HomeApp("Passwords", designs: [
             flat(2024, 0xFFFFFF, art { edge in ArrivalsFannedKeys(edge: edge) }),                                   // sampled
-            design(2025, 0x303131, 0x131313, art { edge in                                                         // sampled
-                ArrivalsGlassKeys(edge: edge, colours: [hex(0xE9B840), hex(0x5DB462), hex(0x2F7CF6)], bow: 0.27, spacing: 0.185, alpha: 0.86)
+            // Measured off the 1024 pt iOS 26 artwork: the tile is near-black (#1F1F1F to
+            // #0F0E0F, not #303131) and the keys are saturated — #FFCA3F, #31CD46 (ours read
+            // #5DB462) and #2F7ED6.
+            design(2025, 0x1F1F1F, 0x0F0E0F, art { edge in                                                         // measured
+                ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFCA3F), hex(0x2AC544), hex(0x2F7ED6)], bow: 0.27, spacing: 0.185, alpha: 0.94)
             }),
             design(2026, 0x1F1F1F, 0x0F0F0F, art { edge in                                                         // sampled
                 ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFD242), hex(0x1FC04A), hex(0x2E83E6)], bow: 0.28, spacing: 0.19, alpha: 0.94)
@@ -1719,12 +1722,16 @@ private struct ArrivalsPictureLoupe: View {
 
 // MARK: - Siri
 
-/// The wavy horizon across the Siri orb: up on the left, a dip right of
-/// centre, up again at the right rim. In unit fractions of the orb.
+/// The horizon across the Siri orb, in unit fractions of the orb. Traced
+/// from the 1024 pt artwork (com.apple.campo): the white core sits at
+/// (0.25, 0.453) (0.40, 0.476) (0.50, 0.514) (0.60, 0.552) (0.75, 0.579)
+/// (0.80, 0.570) — it falls left to right the whole way, with no crest on
+/// the left and no lift at the right rim.
 private func arrivalsHorizon(_ path: inout Path, _ p: (Double, Double) -> CGPoint) {
-    path.move(to: p(-0.05, 0.56))
-    path.addCurve(to: p(0.40, 0.46), control1: p(0.12, 0.52), control2: p(0.26, 0.45))
-    path.addCurve(to: p(1.05, 0.44), control1: p(0.58, 0.47), control2: p(0.72, 0.60))
+    path.move(to: p(-0.02, 0.42))
+    path.addCurve(to: p(0.30, 0.456), control1: p(0.14, 0.446), control2: p(0.20, 0.452))
+    path.addCurve(to: p(0.62, 0.558), control1: p(0.42, 0.482), control2: p(0.50, 0.514))
+    path.addCurve(to: p(1.02, 0.578), control1: p(0.72, 0.578), control2: p(0.84, 0.572))
 }
 
 private struct ArrivalsHorizonShape: Shape {
@@ -1732,8 +1739,8 @@ private struct ArrivalsHorizonShape: Shape {
         func p(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: rect.minX + rect.width * x, y: rect.minY + rect.height * y) }
         var path = Path()
         arrivalsHorizon(&path, p)
-        path.addLine(to: p(1.05, 1.1))
-        path.addLine(to: p(-0.05, 1.1))
+        path.addLine(to: p(1.02, 1.1))
+        path.addLine(to: p(-0.02, 1.1))
         path.closeSubpath()
         return path
     }
@@ -1748,42 +1755,73 @@ private struct ArrivalsHorizonLine: Shape {
     }
 }
 
-/// iOS 27's Siri: a chrome sphere, charcoal above a bright wavy horizon and
-/// silver below it.
+/// One prism fringe of the Siri horizon: the horizon line nudged off the
+/// white core, softened, and faded out at both rims.
+private struct ArrivalsSiriFringe: View {
+    var side: Double
+    var dy: Double
+    var colour: Color
+    var width: Double
+    var alpha: Double
+    var soft: Double
+
+    var body: some View {
+        ArrivalsHorizonLine()
+            .stroke(LinearGradient(stops: [
+                .init(color: colour.opacity(0), location: 0.02),
+                .init(color: colour.opacity(alpha), location: 0.24),
+                .init(color: colour.opacity(alpha), location: 0.90),
+                .init(color: colour.opacity(0), location: 1.0),
+            ], startPoint: .leading, endPoint: .trailing),
+                    style: StrokeStyle(lineWidth: side * width, lineCap: .round))
+            .offset(y: side * dy)
+            .blur(radius: side * soft / 80)
+    }
+}
+
+/// iOS 27's Siri: a chrome sphere, charcoal above a prism-split horizon and
+/// polished silver below it. Measured off the 1024 pt artwork:
+/// - the cap is LIGHTEST near the middle (#5D5C5F at (0.41, 0.36)) and
+///   darkest at the rim (#21242A), not the other way round;
+/// - the split runs ACROSS the band, not along it: warm (#F9B897) about
+///   3 units above the core, cyan 2 below, blue 4 below;
+/// - the silver is a pool brightest at (0.50, 0.87) at #EDEFF1, falling to
+///   #9FA1A3 out at the rims — it is not a horizontal band.
 private struct ArrivalsSiriOrb: View {
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             ZStack {
-                // Upper hemisphere: near-black, catching grey light at the rim.
-                Circle().fill(RadialGradient(colors: [hex(0x1D1E22), hex(0x2C2D31), hex(0x6A6B70)], center: .init(x: 0.52, y: 0.42),
-                                             startRadius: 0, endRadius: side * 0.52))
-                // Lower hemisphere: polished silver.
+                // The cap: light through the middle, near-black at the rim.
+                Circle().fill(RadialGradient(colors: [hex(0x585A5F), hex(0x3D4045), hex(0x262A30), hex(0x1D2027)],
+                                             center: .init(x: 0.45, y: 0.42),
+                                             startRadius: 0, endRadius: side * 0.62))
+                // The chrome below the horizon, and its caustic pool.
                 ArrivalsHorizonShape()
                     .fill(LinearGradient(stops: [
-                        .init(color: hex(0x6F747C), location: 0.45),
-                        .init(color: hex(0xB8BCC2), location: 0.60),
-                        .init(color: hex(0xEFF0F2), location: 0.74),
-                        .init(color: hex(0xA2A6AB), location: 0.90),
-                        .init(color: hex(0x6A6D72), location: 1.0),
+                        .init(color: hex(0x5B5F64), location: 0.44),
+                        .init(color: hex(0x7E8288), location: 0.62),
+                        .init(color: hex(0x999CA0), location: 0.80),
+                        .init(color: hex(0xA9ACAF), location: 1.0),
                     ], startPoint: .top, endPoint: .bottom))
-                // The lit horizon, warm on the left and cool on the right.
-                // The lit horizon: a soft glow under a thin iridescent line,
-                // brightest left of centre and fading toward the rim.
-                ArrivalsHorizonLine()
-                    .stroke(LinearGradient(colors: [.white.opacity(0), .white.opacity(0.35), .white.opacity(0.2), .white.opacity(0)],
-                                           startPoint: .leading, endPoint: .trailing),
-                            style: StrokeStyle(lineWidth: side * 0.05, lineCap: .round))
-                ArrivalsHorizonLine()
-                    .stroke(LinearGradient(stops: [
-                        .init(color: .white.opacity(0.1), location: 0.05),
-                        .init(color: hex(0xFFC690), location: 0.28),
-                        .init(color: .white, location: 0.40),
-                        .init(color: hex(0x9EC4FF), location: 0.52),
-                        .init(color: .white.opacity(0.75), location: 0.72),
-                        .init(color: .white.opacity(0.15), location: 0.95),
-                    ], startPoint: .leading, endPoint: .trailing),
-                            style: StrokeStyle(lineWidth: side * 0.016, lineCap: .round))
+                Circle()
+                    .fill(RadialGradient(colors: [.white.opacity(0.74), .white.opacity(0.36), .white.opacity(0)],
+                                         center: .center, startRadius: 0, endRadius: side * 0.41))
+                    .frame(width: side * 0.82, height: side * 0.82)
+                    .position(x: side * 0.5, y: side * 0.875)
+                    .clipShape(ArrivalsHorizonShape())
+                // The horizon, split across its thickness: warm above, cool below.
+                ArrivalsSiriFringe(side: side, dy: -0.026, colour: hex(0xF9A985), width: 0.050, alpha: 0.95, soft: 1.6)
+                ArrivalsSiriFringe(side: side, dy: 0.046, colour: hex(0x8FBAF9), width: 0.055, alpha: 0.80, soft: 1.9)
+                ArrivalsSiriFringe(side: side, dy: 0.020, colour: hex(0xBDF4F9), width: 0.038, alpha: 0.95, soft: 1.3)
+                ArrivalsSiriFringe(side: side, dy: -0.004, colour: hex(0xFFF6E4), width: 0.030, alpha: 0.80, soft: 1.0)
+                ArrivalsSiriFringe(side: side, dy: 0, colour: hex(0xFDFDFD), width: 0.022, alpha: 1.0, soft: 0.55)
+                // The flare where the band runs off the right rim.
+                Circle()
+                    .fill(RadialGradient(colors: [.white.opacity(0.85), .white.opacity(0.30), .white.opacity(0)],
+                                         center: .init(x: 0.579, y: 0.5), startRadius: 0, endRadius: side * 0.19))
+                    .frame(width: side * 0.38, height: side * 0.38)
+                    .position(x: side * 0.93, y: side * 0.66)
                 Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.5), .white.opacity(0.0), .black.opacity(0.2)],
                                                      startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: side * 0.015)
             }
