@@ -1,0 +1,631 @@
+/* iOS Eras: a white page, a phone, a ruler. */
+
+:root {
+  --ink: #0b0b0c;
+  --ink-2: rgba(60, 60, 67, 0.6);
+  --ink-3: rgba(60, 60, 67, 0.3);
+  --hairline: rgba(60, 60, 67, 0.14);
+  --fill: rgba(118, 118, 128, 0.12);
+  --accent: #007aff;
+  --page: #ffffff;
+  --sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-header {
+  padding: max(18px, env(safe-area-inset-top)) 16px 4px;
+}
+
+.site-header-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.brand {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 750;
+  letter-spacing: -0.022em;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+/* An iOS segmented control. */
+.segmented {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--fill);
+  isolation: isolate;
+}
+
+.segmented-thumb {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  width: calc(50% - 2px);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  transition: transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1);
+  z-index: -1;
+}
+
+.segmented-thumb[data-page='button'] {
+  transform: translateX(100%);
+}
+
+.segmented-item {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 6px 16px;
+  min-height: 32px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.segmented-item.on {
+  font-weight: 600;
+}
+
+.segmented-item:focus-visible,
+.play:focus-visible,
+.sound:focus-visible,
+.site-footer a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.play {
+  appearance: none;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 16px 0 13px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.play svg {
+  width: 15px;
+  height: 15px;
+}
+
+.play:hover {
+  background: #2a2a2d;
+}
+
+.play:active {
+  transform: scale(0.96);
+}
+
+.sound {
+  appearance: none;
+  border: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: var(--fill);
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sound svg {
+  width: 19px;
+  height: 19px;
+}
+
+.sound[aria-pressed='false'] {
+  color: var(--ink-2);
+}
+
+.page-host {
+  flex: 1 0 auto;
+  display: flex;
+  justify-content: center;
+  padding: 6px 16px 0;
+}
+
+.column {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.site-footer {
+  padding: 14px 20px max(18px, env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.site-footer p {
+  margin: 0 auto;
+  max-width: 760px;
+}
+
+/* When the footer does not fit beside the iPhone, it starts below the fold. */
+.footer-below .page-host {
+  min-height: calc(100vh - var(--header-h, 0px));
+  min-height: calc(100dvh - var(--header-h, 0px));
+}
+
+.site-footer .credit {
+  color: var(--ink);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.site-footer a {
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.site-footer a:hover {
+  border-bottom-color: currentColor;
+}
+
+.site-footer .legal {
+  max-width: 900px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  color: rgba(60, 60, 67, 0.5);
+}
+
+.page-placeholder {
+  padding: 120px 20px;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* Narrow screens: the header stacks and centres. */
+@media (max-width: 719px) {
+  .site-header {
+    padding-top: max(14px, env(safe-area-inset-top));
+  }
+  .site-header-inner {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  .title {
+    font-size: 24px;
+  }
+  .subtitle {
+    font-size: 13.5px;
+  }
+  .subtitle-more {
+    display: none;
+  }
+  .controls {
+    gap: 8px;
+  }
+  .segmented-item {
+    padding: 6px 13px;
+  }
+  .page-host {
+    padding-top: 4px;
+  }
+}
+
+/* ---------------------------------------------------------------- capture layouts */
+
+/* ?capture=1: the iOS page, 440 pt wide, the stage row starting 107 pt down
+   (below the navigation bar), no header or footer. */
+.mode-capture .page-host {
+  padding: 107px 0 0;
+}
+
+.mode-capture .column {
+  max-width: none;
+  width: 440px;
+}
+
+
+/* ?screen=1: only the screen, at the top-left, on white. */
+.mode-screen .page-host {
+  padding: 0;
+  display: block;
+}
+
+.mode-screen .column {
+  display: block;
+  max-width: none;
+}
+
+/* ---------------------------------------------------------------- timeline */
+
+.timeline {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage-row {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caption {
+  margin-top: 22px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: #000;
+}
+
+.xfade {
+  position: relative;
+  width: 100%;
+}
+
+.xfade-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  text-align: center;
+}
+
+.caption-title {
+  height: 21.5px;
+  font-size: 18px;
+  line-height: 21.5px;
+}
+
+.caption-title .xfade-layer {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.caption-system {
+  font-weight: 600;
+}
+
+.caption-dot {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+.caption-device {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.caption-note {
+  height: 34.6px;
+  font-size: 14.5px;
+  line-height: 17.3px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.caption-note .xfade-layer {
+  left: 28px;
+  right: 28px;
+}
+
+.ruler-wrap {
+  width: 100%;
+  padding: 0 8px 18px;
+}
+
+.ruler {
+  position: relative;
+  width: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  outline: none;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ruler:active {
+  cursor: grabbing;
+}
+
+.ruler:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.ruler-ticks {
+  display: block;
+}
+
+.ruler-labels {
+  position: relative;
+  height: 22px;
+}
+
+.ruler-label {
+  position: absolute;
+  top: 13px;
+  transform: translate(-50%, -50%);
+  font-family: var(--sans);
+  font-size: 9px;
+  line-height: normal;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  transition: opacity 0.15s ease-out, color 0.15s ease-out;
+}
+
+.ruler-label.shown {
+  opacity: 1;
+}
+
+.ruler-label.current {
+  font-weight: 700;
+  color: #000;
+}
+
+/* ---------------------------------------------------------------- home screen */
+
+.home-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hi {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 50% 50%;
+}
+
+.hi-tile {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.hi-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.hi-art,
+.hi-gloss {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  object-fit: cover;
+}
+
+.hi-rim {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.45));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.hi-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  white-space: nowrap;
+  line-height: normal;
+  pointer-events: none;
+}
+
+.hf {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hf-frost {
+  position: absolute;
+  inset: 0;
+  /* the material's wash (see MATERIAL_WASH), then white 22% */
+  background: linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)), rgba(245, 245, 245, 0.36);
+}
+
+.hf-edge {
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-color: transparent;
+  border-image: linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35)) 1;
+}
+
+.hf-mini {
+  position: absolute;
+  overflow: hidden;
+}
+
+.hd {
+  position: absolute;
+}
+
+.hd-shelf {
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+}
+
+.hd-tray {
+  flex: 1;
+}
+
+.hd-strip {
+  flex: none;
+  background: rgb(112, 112, 112);
+}
+
+.hd-glass {
+  position: absolute;
+  inset: 0;
+}
+
+.hd-face {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.16));
+}
+
+.hd-lip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hd-panel {
+  position: absolute;
+  inset: 0;
+}
+
+.hp {
+  position: absolute;
+  left: 0;
+  height: 0;
+}
+
+.hp-row {
+  position: absolute;
+  overflow: visible;
+}
+
+.hp-pill {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+}
+
+.hp-text {
+  white-space: nowrap;
+  line-height: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmented-thumb,
+  .ruler-label {
+    transition: none;
+  }
+}

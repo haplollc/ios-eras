@@ -1,0 +1,11 @@
+# macOS / Xcode
+.DS_Store
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# web
+web/node_modules/
+web/dist/
+.vercel
