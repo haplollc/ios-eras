@@ -1,0 +1,158 @@
+/* The Button Eras page: the stage (iPhone or swatch), the button face, and
+   the "Button only" toggle. */
+
+.button-page-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.button-page-stage > .button-view {
+  /* Both views are centred in the row, so switching between them does not
+     move the one that stays. */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.35s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
+.button-page-stage > .button-view.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.button-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------- face */
+
+.bf {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.bf-box {
+  position: absolute;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bf-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.bf-press {
+  transition: opacity 0.12s ease-out;
+}
+
+.bf-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  line-height: normal;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  transition: opacity 0.12s ease-out;
+}
+
+.bf-slot {
+  position: relative;
+  display: inline-block;
+}
+
+.bf-glyph {
+  display: inline-block;
+}
+
+.bf-out {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* ---------------------------------------------------------------- toggle */
+
+.button-only {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  appearance: none;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 13px 0 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--ink, #000);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+}
+
+.button-only svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.button-only:active {
+  transform: scale(0.96);
+}
+
+.button-only:focus-visible {
+  outline: 2px solid var(--accent, #007aff);
+  outline-offset: 2px;
+}
+
+/* Narrow rows: just the glyph, so it clears the iPhone. */
+@media (max-width: 520px) {
+  .button-only {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+  .button-only span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-page-stage > .button-view,
+  .bf-press,
+  .bf-label {
+    transition: none;
+  }
+}

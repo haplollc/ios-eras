@@ -210,16 +210,27 @@ class Pen {
   }
 }
 
-/** MediaArrowShape: tip top centre, wings at the bottom corners, notch at 70%. */
+/** MediaArrowShape: Apple's navigation arrow. A slim triangle with a notch
+ *  cut up to 0.66 of the height, and every corner rounded off - a blunt tip,
+ *  soft swept-back wings, a soft notch. The outline is traced from the real
+ *  iOS 18 Maps marker: straight sides, widest at 0.95 of the height, the
+ *  wings rounded away so the bottom is two soft points, not two spikes. */
 function arrowPath(cx: number, cy: number, w: number, h: number): string {
-  const x0 = cx - w / 2
-  const y0 = cy - h / 2
-  return polygon([
-    [cx, y0],
-    [x0 + w, y0 + h],
-    [cx, y0 + h * 0.7],
-    [x0, y0 + h],
-  ])
+  const p = (u: number, v: number) => P(cx + w * (u - 0.5), cy + h * (v - 0.5))
+  return (
+    `M${p(0.5, 0)} ` +
+    `C${p(0.5295, 0)} ${p(0.5657, 0.038)} ${p(0.5953, 0.1)} ` +
+    `L${p(1, 0.95)} ` +
+    `Q${p(1.024, 1)} ${p(0.945, 1)} ` +
+    `Q${p(0.9074, 1)} ${p(0.8475, 0.95)} ` +
+    `L${p(0.5479, 0.7)} ` +
+    `Q${p(0.5, 0.66)} ${p(0.4521, 0.7)} ` +
+    `L${p(0.1525, 0.95)} ` +
+    `Q${p(0.0926, 1)} ${p(0.055, 1)} ` +
+    `Q${p(-0.024, 1)} ${p(0, 0.95)} ` +
+    `L${p(0.4047, 0.1)} ` +
+    `C${p(0.4343, 0.038)} ${p(0.4705, 0)} ${p(0.5, 0)} Z`
+  )
 }
 
 /** MediaShieldShape in a w x h frame at (x0, y0). */
@@ -403,11 +414,12 @@ function lensGlass26(k: Kit): string {
     -40,
     320,
   )
-  // The highlight upper-left.
-  out += glow(k, hex(0x6f9bf2), 0.95, 0.2, 45, 36, 50, 28, -40)
-  out += glow(k, hex(0xa06a62), 0.85, 0, 33.5, 46.5, 20, 9, -15)
-  out += glow(k, hex(0xeef5ff), 1, 0.35, 41.5, 40.5, 28, 28)
-  out += circle(41.5, 40.5, 7, '#fff')
+  // The highlight upper-left. The hot core stays small: on the real icon it
+  // is a specular point in a wide haze, not a white blob.
+  out += glow(k, hex(0x6f9bf2), 0.95, 0.2, 45, 36, 44, 26, -40)
+  out += glow(k, hex(0xa06a62), 0.85, 0, 33.5, 46.5, 18, 8, -15)
+  out += glow(k, hex(0xeef5ff), 1, 0.3, 42.5, 40, 21, 21)
+  out += circle(42.5, 40, 4.6, '#fff')
   return out
 }
 
@@ -444,11 +456,11 @@ function lensGlass27(k: Kit): string {
     20.5,
   )
   // Top highlight: a blue haze, warm fringes either side, a white core.
-  out += glow(k, hex(0x9db4f5), 0.95, 0.2, 50, 34, 52, 32)
-  out += glow(k, hex(0x946a6c), 0.8, 0, 37.5, 36, 16, 9)
-  out += glow(k, hex(0x946a6c), 0.8, 0, 62.5, 36, 16, 9)
-  out += glow(k, hex(0xf4fbff), 1, 0.35, 50, 33, 26, 20)
-  out += ellipse(50, 33, 7.5, 6, '#fff')
+  out += glow(k, hex(0x9db4f5), 0.95, 0.2, 50, 34, 46, 29)
+  out += glow(k, hex(0x946a6c), 0.8, 0, 37.5, 36, 15, 8)
+  out += glow(k, hex(0x946a6c), 0.8, 0, 62.5, 36, 15, 8)
+  out += glow(k, hex(0xf4fbff), 1, 0.3, 50, 33, 20, 16)
+  out += ellipse(50, 33, 5.5, 4.4, '#fff')
   return out
 }
 
@@ -670,7 +682,7 @@ function mapIOS7Art(k: Kit): string {
   out += shieldArt(k, { crown: hex(0xdb1d22), body: hex(0x007aff), borderWidth: 0.014, crownHeight: 0.17 }, 34.5, 54.5, 40, 32)
   out += circle(76.5, 68.5, 20, '#fff')
   out += circle(76.5, 68.5, 18.4, hex(0x007aff))
-  out += path(arrowPath(76.5, 68, 6, 11), '#fff')
+  out += path(arrowPath(76.5, 68, 6.8, 11), '#fff')
   return out
 }
 
@@ -720,6 +732,10 @@ function mapModernArt(k: Kit, look: MapLook): string {
   const routeLow = pick(hex(0x0771eb), hex(0x0983fe), hex(0x0485ff))
   const markerR = pick(0.2555, 0.284, 0.29) * 100
   const discR = pick(0.211, 0.226, 0.215) * 100
+  // The arrow, measured off each icon: iOS 26 draws it bigger inside its disc.
+  const arrowW = pick(0.224, 0.239, 0.239) * 100
+  const arrowH = pick(0.271, 0.29, 0.29) * 100
+  const arrowRise = pick(0.016, 0.0175, 0.0175) * 100
   const [mx, my] = look === 'ios15' ? [37.8, 62.2] : [37.5, 61]
   const rim = look === 'ios15' ? 0 : 0.6
 
@@ -751,7 +767,7 @@ function mapModernArt(k: Kit, look: MapLook): string {
   let disc = circle(mx, my, discR * 2, down(k, discInk, my - discR, my + discR))
   if (rim > 0) disc += ring(mx, my, discR * 2, rim, white(0.5))
   out += look === 'ios27' ? `<g filter="${shadow(k, black(0.3), 1.5, 0, 1.5)}">${disc}</g>` : disc
-  out += path(arrowPath(mx, my - 1.3, 22, 27.1), look === 'ios26' ? hex(0xe9f5fe) : '#fff')
+  out += path(arrowPath(mx, my - arrowRise, arrowW, arrowH), look === 'ios26' ? hex(0xe9f5fe) : '#fff')
   return out
 }
 
@@ -810,7 +826,7 @@ function glassCloud(k: Kit, cx: number, cy: number, w: number, fill: number[]): 
   const d = cloudPath(X, Y, W, H)
   return (
     path(d, white(0.95), `filter="${shadow(k, hex(0x08306e, 0.35), 2, 1, 2)}"`) +
-    path(d, down(k, fill.map((c) => hex(c)), Y - H / 2, Y + H / 2), `transform="translate(${f(X)} ${f(Y)}) scale(0.965) translate(${f(-X)} ${f(-Y)})"`)
+    path(d, down(k, fill.map((c) => hex(c)), Y - H / 2, Y + H / 2), `transform="translate(${f(X)} ${f(Y)}) scale(0.978) translate(${f(-X)} ${f(-Y)})"`)
   )
 }
 
@@ -987,7 +1003,7 @@ const swiss2025: ClockSpec = {
   ...clockBase,
   face: null, numeralInk: 0x3c3c3c, numeralWeight: weight.semibold, numeralSize: 0.14, numeralRadius: 0.275,
   numeralFamily: 'rounded', quartersOnly: true, swiss: true,
-  handStyle: 'stem', hourWidth: 0.0425, hourLength: 0.27, minuteWidth: 0.0425, minuteLength: 0.4,
+  handStyle: 'stem', hourWidth: 0.04, hourLength: 0.27, minuteWidth: 0.04, minuteLength: 0.4,
   secondInk: 0xff9501, secondWidth: 0.015, secondLength: 0.391, secondTail: 0.067, cap: 'ring',
 }
 // iOS 27: lighter indices, a shorter second hand.
@@ -1009,7 +1025,7 @@ function clockArt(k: Kit, s: ClockSpec): string {
     // in the band between that inset and one of 12%.
     const outer = rrectPath(50, 50, 90, 90, 17, true)
     const inner = rrectPath(50, 50, 76, 76, 10, true)
-    out += `<g clip-path="${clip(k, `<path d="${outer}"/>`)}">${radialBars(12, 0.35, 0.8, 0.016, hex(s.indexInk))}</g>`
+    out += `<g clip-path="${clip(k, `<path d="${outer}"/>`)}">${radialBars(12, 0.35, 0.8, 0.0135, hex(s.indexInk))}</g>`
     out += `<g clip-path="${clip(k, `<path d="${outer} ${inner}" clip-rule="evenodd"/>`)}">${radialBars(60, 0.3, 0.8, 0.011, hex(s.tickInk), 50, 50, 100, 5)}</g>`
   }
   // Numerals.

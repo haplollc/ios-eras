@@ -34,6 +34,21 @@ scripts/render_bare.sh /tmp/rec.mp4 ~/Desktop/button-eras-hero.mp4 20 3.7
 `UIC_ERAS_YEAR=2013` / `UIC_HOME_YEAR=2013` open a component on one year for stills;
 `UIC_ERAS_BARE=1` shows the button alone on a swatch of that year's screen.
 
+The home screen is the heavy page: record it at `SIMCTL_CHILD_UIC_DEMO_PACE=3`
+and hand the same `3` to `render_bare.sh` as its speed, which gives a full
+frame rate from a scene that cannot draw 60 of these a second live.
+
+One trap when re-recording: `simctl` stops emitting frames while the screen is
+still, so a recording that ends on a held year finishes *before* the walk does
+and the last seconds are missing. Terminate the app from a background job a
+few seconds before the recording's own length, which keeps frames flowing
+through the end of the walk. Nothing needs padding afterwards.
+
+`web/tools/og.mjs` regenerates the site's social card (`web/public/og.png`)
+from real renders of four years. There is no committed generator for
+`media/eras-strip.png`: it is six `UIC_HOME_YEAR` captures fitted into the
+existing device frames, so rebuilding it means re-fitting by hand.
+
 ## Using your own icon images (Home Screen Eras)
 
 Drop PNGs into `ios/iOSEras/HomeIconImages/` named `<App>_<year>.png`

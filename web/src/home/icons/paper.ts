@@ -167,19 +167,31 @@ function dotted(d: string, colour: string, size: number, pitch: number): string 
 }
 
 /** PaperGearShape of outer radius `outer` round (cx, cy). `hole` adds a
- *  circle (fill it even-odd). */
-type Profile = 'square' | 'pointed' | 'rounded'
+ *  circle (fill it even-odd).
+ *
+ *  Apple's gears - the skeuomorphic Settings wheel and the iOS 26/27 glass
+ *  one alike - have BLUNT teeth: a flat or softly rounded crest, a flat
+ *  valley and short flanks, never the needle points a raw zigzag gives. So
+ *  `cog` and `rounded` shape the radius with a normalised soft square wave
+ *  of the tooth angle, `k` setting how square the crest is (small k = a
+ *  machined cog, larger k = the rounded fingers of the glass gear). */
+type Profile = 'square' | 'cog' | 'rounded'
+const TOOTH_K: Record<string, number> = { cog: 0.3, rounded: 0.55 }
 function gearPath(cx: number, cy: number, outer: number, teeth: number, depth: number, profile: Profile, hole = 0): string {
   const inner = outer * (1 - depth)
-  const perTooth = profile === 'rounded' ? 8 : profile === 'pointed' ? 2 : 4
+  const perTooth = profile === 'square' ? 4 : 12
   const steps = teeth * perTooth
+  const k = TOOTH_K[profile] ?? 0.3
+  const norm = Math.sqrt(1 + k * k)
   let d = ''
   for (let step = 0; step < steps; step++) {
     const a = (step / steps) * 2 * Math.PI
     let r: number
     if (profile === 'square') r = step % 4 < 2 ? outer : inner
-    else if (profile === 'pointed') r = step % 2 === 0 ? outer : inner
-    else r = inner + (outer - inner) * Math.pow(0.5 + 0.5 * Math.cos(teeth * a), 0.6)
+    else {
+      const u = Math.cos(teeth * a)
+      r = inner + (outer - inner) * (0.5 + (0.5 * (u * norm)) / Math.sqrt(u * u + k * k))
+    }
     d += `${step ? 'L' : 'M'}${f(cx + Math.cos(a) * r)},${f(cy + Math.sin(a) * r)} `
   }
   d += 'Z'
@@ -419,11 +431,11 @@ const reminderCard: Art = (k) => {
     [0.5, 0.72],
     [0.77, 0.82],
   ]) {
-    // SF's .heavy checkmark is about 1.8 pt thick here, Phosphor's bold one
-    // about 1 pt: a stroke of its own colour (24 of its 256 units) makes up
-    // the weight.
+    // Apple's ticks here are a pen stroke, not a slab: SF's .semibold
+    // checkmark is about 1.2 pt thick, Phosphor's bold one about 1 pt, so a
+    // thin stroke of its own colour (10 of its 256 units) makes up the rest.
     const ink = hex(0x1a1a1a)
-    out += `<g stroke="${ink}" stroke-width="24" stroke-linejoin="round">${symbol('checkmark', ink, 13, 24.5, y * 100)}</g>`
+    out += `<g stroke="${ink}" stroke-width="10" stroke-linejoin="round">${symbol('checkmark', ink, 13, 24.5, y * 100)}</g>`
     out += crect(((0.5 + end) / 2) * 100, y * 100, (end - 0.5) * 100, 5, 0.8, hex(0xb1b1b1))
   }
   return out
@@ -461,7 +473,7 @@ interface GearPlateStyle {
 const plateOS1: GearPlateStyle = {
   dots: hex(0x1e1e20, 0.8), dotPitch: 0.042, dotSize: 0.022, stagger: false,
   silver: [hex(0xf7f8f9), hex(0xc6c7c9), hex(0x8c8d90)], rim: hex(0x2a2a2c),
-  profile: 'pointed', teeth: 22, depth: 0.2, x: 0.49, y: 0.64, radius: 0.45, window: 0.66,
+  profile: 'cog', teeth: 22, depth: 0.18, x: 0.49, y: 0.64, radius: 0.45, window: 0.66,
   spokes: [-74, 0, -138], spokeWidth: 0.032, hub: 'dark', hubRadius: 0.175,
   smalls: [[0.13, 0.975], [0.84, 0.975]], smallRadius: 0.28, smallFace: [hex(0xb8b9bb), hex(0x88898b)],
   frame: [hex(0xf2f4f8), hex(0xb6b9be), hex(0x8a8b8e)], frameWidth: 0.05,
@@ -470,7 +482,7 @@ const plateOS1: GearPlateStyle = {
 const plateIOS4: GearPlateStyle = {
   dots: hex(0x2e2e30, 0.9), dotPitch: 0.036, dotSize: 0.02, stagger: false,
   silver: [hex(0xfafafa), hex(0xcdcdcf), hex(0x929294)], rim: hex(0x3a3a3c),
-  profile: 'pointed', teeth: 20, depth: 0.25, x: 0.49, y: 0.65, radius: 0.46, window: 0.65,
+  profile: 'cog', teeth: 20, depth: 0.21, x: 0.49, y: 0.65, radius: 0.46, window: 0.65,
   spokes: [-74, 2, -144], spokeWidth: 0.03, hub: 'silver', hubRadius: 0.17,
   smalls: [[0.1, 0.975], [0.87, 0.975]], smallRadius: 0.28, smallFace: [hex(0xc4c4c6), hex(0x8e8e90)],
   frame: [hex(0xf6f6f6), hex(0xc8c8ca), hex(0x9a9a9c)], frameWidth: 0.038,
@@ -589,17 +601,21 @@ function glassGears(o: {
   backRadius: number
   backHole: number
   backTeeth: number
+  teeth: number
+  depth: number
   ringHole: number
   spokeWidth: number
   hubRadius: number
   hole: string
 }): Art {
   return (k) => {
-    let out = path(gearPath(48.5, 50.5, o.backRadius * 100, o.backTeeth, 0.22, 'rounded', o.backHole), o.back, EVENODD)
+    // The second gear sits up and to the right, so its teeth show through the
+    // big gear's hole in that quadrant, the way Apple's does.
+    let out = path(gearPath(56, 43, o.backRadius * 100, o.backTeeth, 0.16, 'rounded', o.backHole), o.back, EVENODD)
     // One gradient over each piece's own frame (topLeading -> bottomTrailing).
     const glass = linear(k, [WHITE, hex(0xf1f1f4), hex(0xdcdce0)], [0, 0], [1, 1])
-    let front = path(gearPath(50, 50, 40, 36, 0.15, 'rounded', o.ringHole), glass, EVENODD)
-    for (let i = 0; i < 3; i++) front += capsule(66, 50, 32, o.spokeWidth * 100, glass, turn(i * 120))
+    let front = path(gearPath(50, 50, 41.5, o.teeth, o.depth, 'rounded', o.ringHole), glass, EVENODD)
+    for (let i = 0; i < 3; i++) front += capsule(67, 50, 34, o.spokeWidth * 100, glass, turn(i * 120))
     front += circle(50, 50, o.hubRadius * 200, glass) + circle(50, 50, 3, o.hole)
     // compositingGroup().opacity().shadow(): the shadow is of the faded
     // group, so it shows through the glass.
@@ -688,8 +704,8 @@ interface CalcLayout {
 }
 
 const layoutFlat: CalcLayout = { bodyWidth: 0.52, bodyHeight: 0.76, bodyRadius: 0.08, displayWidth: 0.42, displayHeight: 0.17, displayY: 0.255, columns: [0.34, 0.5, 0.66], rows: [0.46, 0.61, 0.76], key: 0.11 }
-const layoutGlass: CalcLayout = { bodyWidth: 0.5, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.4, displayHeight: 0.15, displayY: 0.255, columns: [0.35, 0.5, 0.65], rows: [0.48, 0.61, 0.74], key: 0.095 }
-const layoutGlass27: CalcLayout = { bodyWidth: 0.5, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.4, displayHeight: 0.16, displayY: 0.255, columns: [0.35, 0.5, 0.65], rows: [0.47, 0.61, 0.75], key: 0.1 }
+const layoutGlass: CalcLayout = { bodyWidth: 0.5, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.4, displayHeight: 0.175, displayY: 0.26, columns: [0.35, 0.5, 0.65], rows: [0.485, 0.615, 0.745], key: 0.1 }
+const layoutGlass27: CalcLayout = { bodyWidth: 0.5, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.4, displayHeight: 0.175, displayY: 0.26, columns: [0.35, 0.5, 0.65], rows: [0.485, 0.615, 0.745], key: 0.1 }
 
 /** PaperFlatCalculator: iOS 11-27, a whole calculator drawn flat, glassy
  *  (a shadow and a rim) from iOS 26. */
@@ -834,8 +850,8 @@ interface DialLayout {
 
 const dialIOS7: DialLayout = { tickIn: 0.38, tickOut: 0.43, majorWidth: 0.014, minorWidth: 0.008, letterX: 0.19, letterY: 0.19, crossReach: 0.18, crossWidth: 0.008 }
 const dialIOS11: DialLayout = { tickIn: 0.365, tickOut: 0.44, majorWidth: 0.015, minorWidth: 0.01, letterX: 0.19, letterY: 0.19, crossReach: 0.18, crossWidth: 0.011 }
-const dialIOS26: DialLayout = { tickIn: 0.34, tickOut: 0.4, majorWidth: 0.016, minorWidth: 0.011, letterX: 0.1, letterY: 0.13, crossReach: 0.25, crossWidth: 0.012 }
-const dialIOS27: DialLayout = { tickIn: 0.3, tickOut: 0.36, majorWidth: 0.015, minorWidth: 0.01, letterX: 0.1, letterY: 0.125, crossReach: 0.24, crossWidth: 0.011 }
+const dialIOS26: DialLayout = { tickIn: 0.34, tickOut: 0.4, majorWidth: 0.016, minorWidth: 0.011, letterX: 0.118, letterY: 0.142, crossReach: 0.25, crossWidth: 0.011 }
+const dialIOS27: DialLayout = { tickIn: 0.3, tickOut: 0.36, majorWidth: 0.015, minorWidth: 0.01, letterX: 0.115, letterY: 0.138, crossReach: 0.24, crossWidth: 0.01 }
 
 /** PaperDialCompass: iOS 7-27; 48 ticks (white majors every 30 degrees),
  *  W N S E on the diagonals round a crosshair, the red heading marker. */
@@ -892,8 +908,8 @@ export const paper: HomeAppDef[] = [
       flat(2015, 0xffffff, calendarFlat('Tuesday', system(0.163, weight.regular), hex(0xff3b30), 0.19, system(0.66, SF_ULTRALIGHT), '#000', 0.595)),
       flat(2017, 0xffffff, calendarFlat('Tuesday', system(0.18, weight.semibold), hex(0xff3b30), 0.205, system(0.667, weight.light), '#000', 0.605)),
       flat(2020, 0xffffff, calendarFlat('TUE', system(0.2, weight.bold), hex(0xff3a2f), 0.19, system(0.624, weight.regular), hex(0x262626), 0.6)),
-      design(2025, 0xfdfdfd, 0xefefef, calendarFlat('Tue', system(0.2, weight.semibold), hex(0xff393c), 0.22, system(0.624, weight.semibold), hex(0x1e1e1e), 0.61, true)),
-      design(2026, 0xfefefe, 0xf7f7f7, calendarFlat('Tue', system(0.2, weight.semibold), hex(0xeb4b46), 0.222, system(0.62, weight.semibold), '#000', 0.612, true)),
+      design(2025, 0xfdfdfd, 0xefefef, calendarFlat('Tue', system(0.23, weight.semibold), hex(0xff393c), 0.13, system(0.624, weight.medium), hex(0x1e1e1e), 0.61, true)),
+      design(2026, 0xfefefe, 0xf7f7f7, calendarFlat('Tue', system(0.23, weight.semibold), hex(0xeb4b46), 0.132, system(0.62, weight.medium), '#000', 0.612, true)),
     ],
   },
 
@@ -969,13 +985,13 @@ export const paper: HomeAppDef[] = [
           bandShadow: hex(0xc1bca4, 0.6),
           dots: hex(0xc1bca4),
           dotsY: 0.285,
-          dotPitch: 0.0632,
-          dotSize: 0.023,
-          dotPhase: 0.051,
+          dotPitch: 0.049,
+          dotSize: 0.026,
+          dotPhase: 0.042,
           rules: [0.5, 0.75],
           rule: hex(0xc1c1c1),
-          ruleInset: 0.125,
-          ruleWidth: 0.011,
+          ruleInset: 0.118,
+          ruleWidth: 0.016,
           edge: FLAT,
         }),
       ),
@@ -987,13 +1003,13 @@ export const paper: HomeAppDef[] = [
           bandShadow: hex(0xb9b9b9, 0.4),
           dots: hex(0xb9b9b9),
           dotsY: 0.285,
-          dotPitch: 0.0632,
-          dotSize: 0.023,
-          dotPhase: 0.051,
+          dotPitch: 0.049,
+          dotSize: 0.026,
+          dotPhase: 0.042,
           rules: [0.5, 0.75],
           rule: hex(0xc1c1c1),
-          ruleInset: 0.125,
-          ruleWidth: 0.011,
+          ruleInset: 0.118,
+          ruleWidth: 0.016,
           edge: FLAT,
         }),
       ),
@@ -1041,11 +1057,11 @@ export const paper: HomeAppDef[] = [
         reminderRows(k, {
           colours: [hex(0x007aff), hex(0xff3b30), hex(0xff9500)],
           rows: [0.25, 0.5, 0.75],
-          markerX: 0.188,
-          outer: 0.164,
-          ring: 0.03,
-          disc: 0.075,
-          bar: { x0: 0.367, x1: 0.879, height: 0.02, ink: hex(0xcbcbcf) },
+          markerX: 0.207,
+          outer: 0.17,
+          ring: 0.025,
+          disc: 0.105,
+          bar: { x0: 0.383, x1: 0.861, height: 0.024, ink: hex(0xcbcbcf) },
           edge: FLAT,
         }),
       ),
@@ -1053,12 +1069,12 @@ export const paper: HomeAppDef[] = [
         reminderRows(k, {
           colours: [hex(0x2d7cf6), hex(0xff3b30), hex(0xff9f0a)],
           rows: [0.25, 0.5, 0.75],
-          markerX: 0.207,
-          outer: 0.165,
+          markerX: 0.193,
+          outer: 0.172,
           ring: 0,
-          disc: 0.095,
+          disc: 0.108,
           style: 'glassPin',
-          bar: { x0: 0.35, x1: 0.83, height: 0.022, ink: hex(0xc2c2c2) },
+          bar: { x0: 0.37, x1: 0.875, height: 0.021, ink: hex(0xc2c2c2) },
           edge: FLAT,
         }),
       ),
@@ -1066,12 +1082,12 @@ export const paper: HomeAppDef[] = [
         reminderRows(k, {
           colours: [hex(0x2d7cf6), hex(0xe9463f), hex(0xf29a2e)],
           rows: [0.25, 0.5, 0.75],
-          markerX: 0.203,
-          outer: 0.17,
-          ring: 0.04,
+          markerX: 0.198,
+          outer: 0.178,
+          ring: 0.046,
           disc: 0,
           style: 'softRing',
-          bar: { x0: 0.371, x1: 0.875, height: 0.022, ink: hex(0xc1c1c1) },
+          bar: { x0: 0.375, x1: 0.875, height: 0.022, ink: hex(0xc1c1c1) },
           edge: FLAT,
         }),
       ),
@@ -1092,13 +1108,13 @@ export const paper: HomeAppDef[] = [
         2025,
         0xa7a7ad,
         0x5f5f63,
-        glassGears({ frontAlpha: 0.94, back: hex(0xe2e2e6, 0.62), backRadius: 0.25, backHole: 0.76, backTeeth: 26, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777c) }),
+        glassGears({ frontAlpha: 0.94, back: hex(0xe2e2e6, 0.7), backRadius: 0.25, backHole: 0.76, backTeeth: 26, teeth: 40, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777c) }),
       ),
       design(
         2026,
         0x9c9c9f,
         0x78787d,
-        glassGears({ frontAlpha: 0.8, back: hex(0xe6e6ea, 0.55), backRadius: 0.23, backHole: 0.7, backTeeth: 22, ringHole: 0.72, spokeWidth: 0.07, hubRadius: 0.06, hole: hex(0x78787d) }),
+        glassGears({ frontAlpha: 0.8, back: hex(0xe6e6ea, 0.62), backRadius: 0.23, backHole: 0.7, backTeeth: 22, teeth: 34, depth: 0.155, ringHole: 0.72, spokeWidth: 0.07, hubRadius: 0.06, hole: hex(0x78787d) }),
       ),
     ],
   },
@@ -1203,8 +1219,8 @@ export const paper: HomeAppDef[] = [
         0x101010,
         stocksChart({
           grid: [0.18, 0.4, 0.6, 0.8], gridInk: hex(0x4c4c4c), gridWidth: 0.01,
-          points: chartIOS26, fill: 0.1, lineWidth: 0.04, lineInk: hex(0xf4f4f4),
-          barX: 0.604, barWidth: 0.028, barInk: hex(0x29b6f6), peakY: 0.35, marker: 0.12, markerInk: hex(0x4fd3ff), glass: true, edge: FLAT,
+          points: chartIOS26, fill: 0.1, lineWidth: 0.026, lineInk: hex(0xf4f4f4),
+          barX: 0.604, barWidth: 0.02, barInk: hex(0x29b6f6), peakY: 0.35, marker: 0.085, markerInk: hex(0x4fd3ff), glass: true, edge: FLAT,
         }),
       ),
       design(
@@ -1213,8 +1229,8 @@ export const paper: HomeAppDef[] = [
         0x161616,
         stocksChart({
           grid: [0.18, 0.4, 0.6, 0.8], gridInk: hex(0x3e3e3e), gridWidth: 0.01,
-          points: chartIOS26, fill: 0.12, lineWidth: 0.04, lineInk: hex(0xf4f4f4),
-          barX: 0.604, barWidth: 0.028, barInk: hex(0x5fe0ff), peakY: 0.35, marker: 0.17, markerInk: hex(0x5fe0ff), ring: true, glass: true, edge: FLAT,
+          points: chartIOS26, fill: 0.12, lineWidth: 0.026, lineInk: hex(0xf4f4f4),
+          barX: 0.604, barWidth: 0.02, barInk: hex(0x5fe0ff), peakY: 0.35, marker: 0.095, markerInk: hex(0x5fe0ff), ring: true, glass: true, edge: FLAT,
         }),
       ),
     ],
@@ -1272,7 +1288,7 @@ export const paper: HomeAppDef[] = [
         0x313131,
         0x141414,
         dialCompass({
-          dial: dialIOS26, majorInk: hex(0xf6f6f6), minorInk: hex(0x737373), letters: WHITE, letterFont: system(0.17, weight.semibold),
+          dial: dialIOS26, majorInk: hex(0xf6f6f6), minorInk: hex(0x737373), letters: WHITE, letterFont: system(0.152, weight.medium),
           cross: hex(0x737373), marker: hex(0xff464b), glass: true, edge: FLAT,
         }),
       ),
@@ -1281,7 +1297,7 @@ export const paper: HomeAppDef[] = [
         0x232323,
         0x0f0f0f,
         dialCompass({
-          dial: dialIOS27, majorInk: WHITE, minorInk: hex(0x787878), letters: WHITE, letterFont: system(0.155, weight.semibold),
+          dial: dialIOS27, majorInk: WHITE, minorInk: hex(0x787878), letters: WHITE, letterFont: system(0.142, weight.medium),
           cross: hex(0x777777), marker: hex(0xea534a), glass: true, bezel: true, edge: FLAT,
         }),
       ),

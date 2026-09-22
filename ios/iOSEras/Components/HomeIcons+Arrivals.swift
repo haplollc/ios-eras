@@ -35,27 +35,27 @@ extension HomeApp {
             flat(2013, 0x56B7EF, art { edge in ArrivalsPassbookBands(edge: edge, applePay: false) }),              // sampled
             flat(2014, 0xFB4D43, art { edge in ArrivalsPassbookBands(edge: edge, applePay: true) }),               // sampled
             flat(2015, 0x1E1E1F, art { edge in ArrivalsWalletArt(edge: edge, scale: 1.0, glass: false) }),         // sampled
-            design(2024, 0x303030, 0x151515, art { edge in ArrivalsWalletArt(edge: edge, scale: 0.92, glass: false) }),   // documented
-            design(2025, 0x313131, 0x141414, art { edge in ArrivalsWalletArt(edge: edge, scale: 0.92, glass: true) }),    // sampled
-            design(2026, 0x1F1E1F, 0x0E0E0E, art { edge in ArrivalsWalletArt(edge: edge, scale: 0.92, glass: true, clarity: 0.72) }),   // sampled
+            design(2024, 0x303030, 0x151515, art { edge in ArrivalsWalletArt(edge: edge, scale: 0.98, glass: false) }),   // documented
+            design(2025, 0x313131, 0x141414, art { edge in ArrivalsWalletArt(edge: edge, scale: 0.98, glass: true) }),    // sampled
+            design(2026, 0x1F1E1F, 0x0E0E0E, art { edge in ArrivalsWalletArt(edge: edge, scale: 0.98, glass: true, clarity: 0.72) }),   // sampled
         ]),
 
         HomeApp("Health", designs: [
             flat(2014, 0xFFFFFF, art { edge in                                                                     // sampled
                 ArrivalsHeart(edge: edge, top: hex(0xFF5894), bottom: hex(0xFF2B1F),
-                              box: CGRect(x: 0.380, y: 0.222, width: 0.458, height: 0.356), cleft: 0.19, glass: false)
+                              box: CGRect(x: 0.386, y: 0.157, width: 0.456, height: 0.416), cleft: 0.19, glass: false)
             }),
             flat(2024, 0xFFFFFF, art { edge in                                                                     // sampled
                 ArrivalsHeart(edge: edge, top: hex(0xFF5895), bottom: hex(0xFF2D29),
-                              box: CGRect(x: 0.390, y: 0.189, width: 0.449, height: 0.383), cleft: 0.23, glass: false)
+                              box: CGRect(x: 0.388, y: 0.155, width: 0.454, height: 0.418), cleft: 0.23, glass: false)
             }),
             design(2025, 0xFFFFFF, 0xECECEC, art { edge in                                                         // sampled
                 ArrivalsHeart(edge: edge, top: hex(0xFF3298), bottom: hex(0xFE0A1C),
-                              box: CGRect(x: 0.392, y: 0.166, width: 0.447, height: 0.404), cleft: 0.22, glass: true)
+                              box: CGRect(x: 0.388, y: 0.157, width: 0.454, height: 0.421), cleft: 0.22, glass: true)
             }),
             design(2026, 0xFFFEFE, 0xE8E9E7, art { edge in                                                         // sampled
                 ArrivalsHeart(edge: edge, top: hex(0xEB3E7F), bottom: hex(0xEA3337),
-                              box: CGRect(x: 0.392, y: 0.166, width: 0.447, height: 0.404), cleft: 0.22, glass: true, shadow: 0.42)
+                              box: CGRect(x: 0.388, y: 0.157, width: 0.454, height: 0.421), cleft: 0.22, glass: true, shadow: 0.42)
             }),
         ]),
 
@@ -81,16 +81,16 @@ extension HomeApp {
             design(2016, 0xEF4961, 0xEF3A5D, art { edge in ArrivalsNewspaper(edge: edge, style: .thickLines) }),    // sampled
             design(2017, 0xEF4961, 0xEF3A5D, art { edge in ArrivalsNewspaper(edge: edge, style: .thinLines) }),     // sampled
             flat(2019, 0xFFFFFF, art { edge in                                                                     // sampled (iOS 13)
-                ArrivalsNewsN(size: edge * 0.572, top: hex(0xFD5163), bottom: hex(0xFD3B5C), glass: false)
+                ArrivalsNewsN(size: edge * 0.579, top: hex(0xFD5163), bottom: hex(0xFD3B5C), glass: false)
             }),
             flat(2024, 0xFFFFFF, art { edge in                                                                     // sampled
-                ArrivalsNewsN(size: edge * 0.546, top: hex(0xFD5163), bottom: hex(0xFD3C5C), glass: false)
+                ArrivalsNewsN(size: edge * 0.579, top: hex(0xFD5163), bottom: hex(0xFD3C5C), glass: false)
             }),
             design(2025, 0xFFFFFF, 0xECECEC, art { edge in                                                         // sampled
-                ArrivalsNewsN(size: edge * 0.53, top: hex(0xFE5668), bottom: hex(0xFE4666), glass: true)
+                ArrivalsNewsN(size: edge * 0.585, top: hex(0xFE5668), bottom: hex(0xFE4666), glass: true)
             }),
             design(2026, 0xFEFEFE, 0xF5F4F5, art { edge in                                                         // sampled
-                ArrivalsNewsN(size: edge * 0.53, top: hex(0xFB5368), bottom: hex(0xF94051), glass: true, shadow: 0.36)
+                ArrivalsNewsN(size: edge * 0.585, top: hex(0xFB5368), bottom: hex(0xF94051), glass: true, shadow: 0.36)
             }),
         ]),
 
@@ -213,10 +213,10 @@ extension HomeApp {
         HomeApp("Passwords", designs: [
             flat(2024, 0xFFFFFF, art { edge in ArrivalsFannedKeys(edge: edge) }),                                   // sampled
             design(2025, 0x303131, 0x131313, art { edge in                                                         // sampled
-                ArrivalsGlassKeys(edge: edge, colours: [hex(0xE9B840), hex(0x5DB462), hex(0x2F7CF6)], bow: 0.28, spacing: 0.205, alpha: 0.86)
+                ArrivalsGlassKeys(edge: edge, colours: [hex(0xE9B840), hex(0x5DB462), hex(0x2F7CF6)], bow: 0.27, spacing: 0.185, alpha: 0.86)
             }),
             design(2026, 0x1F1F1F, 0x0F0F0F, art { edge in                                                         // sampled
-                ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFD242), hex(0x1FC04A), hex(0x2E83E6)], bow: 0.30, spacing: 0.20, alpha: 0.94)
+                ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFD242), hex(0x1FC04A), hex(0x2E83E6)], bow: 0.28, spacing: 0.19, alpha: 0.94)
             }),
         ]),
 
@@ -655,7 +655,7 @@ private struct ArrivalsNewsN: View {
                 .mask { letter }
             if glass {
                 // A pale glass sheen over the upper half of the letter.
-                LinearGradient(colors: [.white.opacity(0.42), .white.opacity(0)], startPoint: .top, endPoint: .center)
+                LinearGradient(colors: [.white.opacity(0.30), .white.opacity(0)], startPoint: .top, endPoint: .center)
                     .frame(width: size, height: size)
                     .mask { letter }
             }
@@ -888,14 +888,14 @@ private struct ArrivalsHouse: View {
         case .glass:
             return (0.148, 0.808, [hex(0xFFAE06), hex(0xFE9C00)], [
                 Layer(halfWidth: 0.213, apex: 0.246, base: 0.734, colours: [hex(0xFDB622), hex(0xFD8C00)]),
-                Layer(halfWidth: 0.133, apex: 0.344, base: 0.648, colours: [hex(0xFDDA62), hex(0xFEB41E)]),
-                Layer(halfWidth: 0.058, apex: 0.441, base: 0.574, colours: [hex(0xFFFDD6), hex(0xFEF1A4)]),
+                Layer(halfWidth: 0.128, apex: 0.344, base: 0.648, colours: [hex(0xFDDA62), hex(0xFEB41E)]),
+                Layer(halfWidth: 0.078, apex: 0.441, base: 0.578, colours: [hex(0xFFFDD6), hex(0xFEF1A4)]),
             ])
         case .deepGlass:
             return (0.150, 0.810, [hex(0xFF9100), hex(0xFF7B00)], [
                 Layer(halfWidth: 0.213, apex: 0.246, base: 0.730, colours: [hex(0xFFB02F), hex(0xFFA11B)]),
-                Layer(halfWidth: 0.133, apex: 0.344, base: 0.652, colours: [hex(0xFFD571), hex(0xFFC55A)]),
-                Layer(halfWidth: 0.058, apex: 0.441, base: 0.576, colours: [hex(0xFFFBC3), hex(0xFFFED5)]),
+                Layer(halfWidth: 0.128, apex: 0.344, base: 0.652, colours: [hex(0xFFD571), hex(0xFFC55A)]),
+                Layer(halfWidth: 0.078, apex: 0.441, base: 0.580, colours: [hex(0xFFFBC3), hex(0xFFFED5)]),
             ])
         }
     }
@@ -1106,16 +1106,21 @@ private struct ArrivalsDiamonds: View {
             // Before the 45° turn, bottom-leading becomes the left vertex and
             // the bottom edge becomes the lower-left edge.
             diamond(colours: lower, start: .bottom, end: .top)
-                .offset(y: edge * 0.125)
+                .offset(x: edge * shift, y: edge * lift)
             diamond(colours: upper, start: .bottomLeading, end: .topTrailing)
                 .opacity(upperAlpha)
-                .offset(y: -edge * 0.125)
+                .offset(x: -edge * shift, y: -edge * lift)
         }
         .shadow(color: .black.opacity(glass ? 0.3 : 0), radius: edge * 0.025, y: edge * 0.02)
         .frame(width: edge, height: edge)
     }
 
-    private var side: CGFloat { edge * 0.49 }
+    // Measured off Apple's icons: 0.58 of the tile across (0.65 on the
+    // glass icon) and about two thirds as tall, the pair barely overlapping.
+    private var side: CGFloat { edge * (glass ? 0.46 : 0.41) }
+    private var squash: CGFloat { glass ? 0.66 : 0.655 }
+    private var lift: CGFloat { glass ? 0.13 : 0.165 }
+    private var shift: CGFloat { glass ? 0.025 : 0.02 }
 
     private func diamond(colours: [Color], start: UnitPoint, end: UnitPoint) -> some View {
         RoundedRectangle(cornerRadius: side * roundness, style: .continuous)
@@ -1129,7 +1134,7 @@ private struct ArrivalsDiamonds: View {
             }
             .frame(width: side, height: side)
             .rotationEffect(.degrees(45))
-            .scaleEffect(x: 1, y: 0.79)
+            .scaleEffect(x: 1, y: squash)
     }
 }
 
@@ -1249,7 +1254,7 @@ private struct ArrivalsFreeformArt: View {
     var glow: Color? = nil
 
     var body: some View {
-        let line = StrokeStyle(lineWidth: edge * 0.064, lineCap: .round, lineJoin: .round)
+        let line = StrokeStyle(lineWidth: edge * 0.055, lineCap: .round, lineJoin: .round)
         ZStack(alignment: .topLeading) {
             Circle().fill(LinearGradient(colors: circle, startPoint: .top, endPoint: .bottom))
                 .frame(width: edge * 0.585, height: edge * 0.585)
@@ -1261,7 +1266,7 @@ private struct ArrivalsFreeformArt: View {
                 .offset(x: edge * 0.33, y: edge * 0.13)
             if let glow {
                 ArrivalsScribble()
-                    .stroke(glow.opacity(0.55), style: StrokeStyle(lineWidth: edge * 0.10, lineCap: .round, lineJoin: .round))
+                    .stroke(glow.opacity(0.55), style: StrokeStyle(lineWidth: edge * 0.088, lineCap: .round, lineJoin: .round))
                     .frame(width: edge, height: edge)
             }
             ArrivalsScribble()
@@ -1270,9 +1275,9 @@ private struct ArrivalsFreeformArt: View {
                 .shadow(color: .black.opacity(highlight == nil ? 0 : 0.25), radius: edge * 0.015, y: edge * 0.012)
             if let highlight {
                 ArrivalsScribble()
-                    .stroke(highlight.opacity(0.7), style: StrokeStyle(lineWidth: edge * 0.012, lineCap: .round, lineJoin: .round))
+                    .stroke(highlight.opacity(0.7), style: StrokeStyle(lineWidth: edge * 0.011, lineCap: .round, lineJoin: .round))
                     .frame(width: edge, height: edge)
-                    .offset(y: -edge * 0.014)
+                    .offset(y: -edge * 0.012)
             }
         }
         .frame(width: edge, height: edge, alignment: .topLeading)
@@ -1288,13 +1293,13 @@ private struct ArrivalsUpperWing: Shape {
         let s = rect.width
         func p(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: rect.minX + s * x, y: rect.minY + s * y) }
         var path = Path()
-        path.move(to: p(0.16, 0.205))
-        path.addQuadCurve(to: p(0.21, 0.155), control: p(0.16, 0.155))
-        path.addLine(to: p(0.39, 0.228))
+        path.move(to: p(0.19, 0.205))
+        path.addQuadCurve(to: p(0.235, 0.155), control: p(0.19, 0.155))
+        path.addLine(to: p(0.398, 0.228))
         path.addQuadCurve(to: p(0.472, 0.33), control: p(0.472, 0.255))
-        path.addLine(to: p(0.472, 0.625))
-        path.addCurve(to: p(0.19, 0.468), control1: p(0.45, 0.53), control2: p(0.33, 0.49))
-        path.addQuadCurve(to: p(0.16, 0.44), control: p(0.16, 0.468))
+        path.addLine(to: p(0.472, 0.50))
+        path.addCurve(to: p(0.217, 0.43), control1: p(0.45, 0.49), control2: p(0.34, 0.45))
+        path.addQuadCurve(to: p(0.19, 0.405), control: p(0.19, 0.43))
         path.closeSubpath()
         return path
     }
@@ -1452,24 +1457,24 @@ private struct ArrivalsFannedKeys: View {
 
     var body: some View {
         ZStack {
-            key(x: 0.375, colours: [hex(0xFFD94A), hex(0xFFBE00)], bit: .none)
-            key(x: 0.495, colours: [hex(0x4CD96C), hex(0x2EC351)], bit: .none)
-            key(x: 0.615, colours: [hex(0x5CC6F8), hex(0x0079FF)],
-                bit: .chevrons(count: 2, from: 0.525, pitch: 0.145, depth: 0.075))
+            key(x: 0.365, colours: [hex(0xFFD94A), hex(0xFFBE00)], bit: .none)
+            key(x: 0.500, colours: [hex(0x4CD96C), hex(0x2EC351)], bit: .none)
+            key(x: 0.635, colours: [hex(0x5CC6F8), hex(0x0079FF)],
+                bit: .chevrons(count: 2, from: 0.50, pitch: 0.13, depth: 0.06))
         }
         .frame(width: edge, height: edge)
     }
 
     private func key(x: Double, colours: [Color], bit: ArrivalsKeyShape.Bit) -> some View {
-        let shape = ArrivalsKeyShape(x: x, y: 0.335, bow: 0.37, hole: 0.09, holeLift: 0.22, blade: 0.095, bladeShift: -0.022,
-                                     bottom: 0.875, bit: bit, tip: .slant)
+        let shape = ArrivalsKeyShape(x: x, y: 0.30, bow: 0.335, hole: 0.10, holeLift: 0.26, blade: 0.065, bladeShift: -0.05,
+                                     bottom: 0.862, bit: bit, tip: .slant)
         return ZStack {
-            shape.stroke(.white, style: StrokeStyle(lineWidth: edge * 0.05, lineJoin: .round))
-            shape.fill(LinearGradient(colors: colours, startPoint: .init(x: 0.5, y: 0.15), endPoint: .init(x: 0.5, y: 0.88)))
+            shape.stroke(.white, style: StrokeStyle(lineWidth: edge * 0.04, lineJoin: .round))
+            shape.fill(LinearGradient(colors: colours, startPoint: .init(x: 0.5, y: 0.12), endPoint: .init(x: 0.5, y: 0.88)))
             // The hole shows the white tile, not the key behind.
             Circle().fill(.white)
-                .frame(width: edge * 0.09, height: edge * 0.09)
-                .position(x: edge * x, y: edge * (0.335 - 0.37 * 0.22))
+                .frame(width: edge * 0.10, height: edge * 0.10)
+                .position(x: edge * x, y: edge * (0.30 - 0.335 * 0.26))
         }
         .frame(width: edge, height: edge)
     }
@@ -1487,23 +1492,23 @@ private struct ArrivalsGlassKeys: View {
         let first = 0.5 - spacing
         ZStack {
             key(0, x: first, bit: .block, tip: .round)
-            key(1, x: first + spacing, bit: .chevrons(count: 3, from: 0.52, pitch: 0.06, depth: 0.028), tip: .point)
-            key(2, x: first + spacing * 2, bit: .chevrons(count: 2, from: 0.60, pitch: 0.05, depth: 0.018), tip: .round)
+            key(1, x: first + spacing, bit: .chevrons(count: 3, from: 0.49, pitch: 0.058, depth: 0.028), tip: .point)
+            key(2, x: first + spacing * 2, bit: .chevrons(count: 2, from: 0.57, pitch: 0.05, depth: 0.018), tip: .round)
         }
         .frame(width: edge, height: edge)
     }
 
     private func key(_ index: Int, x: Double, bit: ArrivalsKeyShape.Bit, tip: ArrivalsKeyShape.Tip) -> some View {
         let colour = colours[index]
-        let shape = ArrivalsKeyShape(x: x, y: 0.325, bow: bow, hole: bow * 0.27, blade: 0.075, bottom: 0.84, bit: bit, tip: tip)
+        let shape = ArrivalsKeyShape(x: x, y: 0.285, bow: bow, hole: bow * 0.30, blade: 0.082, bottom: 0.812, bit: bit, tip: tip)
         return ZStack {
-            shape.fill(LinearGradient(colors: [colour, colour.opacity(alpha)], startPoint: .init(x: 0.5, y: 0.2), endPoint: .init(x: 0.5, y: 0.85)))
+            shape.fill(LinearGradient(colors: [colour, colour.opacity(alpha)], startPoint: .init(x: 0.5, y: 0.16), endPoint: .init(x: 0.5, y: 0.82)))
             // Specular rim round the bow.
             Circle()
                 .strokeBorder(LinearGradient(colors: [.white.opacity(0.6), .white.opacity(0)], startPoint: .top, endPoint: .bottom),
                               lineWidth: edge * 0.007)
                 .frame(width: edge * bow, height: edge * bow)
-                .position(x: edge * x, y: edge * 0.325)
+                .position(x: edge * x, y: edge * 0.285)
         }
         .frame(width: edge, height: edge)
         .shadow(color: .black.opacity(0.35), radius: edge * 0.02, y: edge * 0.015)
@@ -1555,19 +1560,22 @@ private struct ArrivalsExhaustShape: Shape {
     func path(in rect: CGRect) -> Path {
         let s = rect.width
         func p(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: rect.midX + s * x, y: rect.midY + s * y) }
-        let c = 0.42, r = 0.075, k = 0.5523 * r
+        // Apple draws the puff clear of the tail: the head sits 0.47 down the
+        // rocket's axis and the whole shape is scaled with its radius.
+        let c = 0.47, r = 0.085, scale = r / 0.075, k = 0.5523 * 0.075
+        func q(_ x: Double, _ dy: Double) -> CGPoint { p(x * scale, c + dy * scale) }
         var path = Path()
         // Round head (toward the hull).
-        path.move(to: p(-r, c))
-        path.addCurve(to: p(0, c - r), control1: p(-r, c - k), control2: p(-k, c - r))
-        path.addCurve(to: p(r, c), control1: p(k, c - r), control2: p(r, c - k))
+        path.move(to: q(-0.075, 0))
+        path.addCurve(to: q(0, -0.075), control1: q(-0.075, -k), control2: q(-k, -0.075))
+        path.addCurve(to: q(0.075, 0), control1: q(k, -0.075), control2: q(0.075, -k))
         // Right tongue, middle tongue, left tongue.
-        path.addQuadCurve(to: p(0.060, 0.500), control: p(0.076, 0.470))
-        path.addQuadCurve(to: p(0.027, 0.458), control: p(0.040, 0.468))
-        path.addQuadCurve(to: p(0.000, 0.540), control: p(0.028, 0.505))
-        path.addQuadCurve(to: p(-0.027, 0.458), control: p(-0.028, 0.505))
-        path.addQuadCurve(to: p(-0.060, 0.500), control: p(-0.040, 0.468))
-        path.addQuadCurve(to: p(-r, c), control: p(-0.076, 0.470))
+        path.addQuadCurve(to: q(0.060, 0.080), control: q(0.076, 0.050))
+        path.addQuadCurve(to: q(0.027, 0.038), control: q(0.040, 0.048))
+        path.addQuadCurve(to: q(0.000, 0.120), control: q(0.028, 0.085))
+        path.addQuadCurve(to: q(-0.027, 0.038), control: q(-0.028, 0.085))
+        path.addQuadCurve(to: q(-0.060, 0.080), control: q(-0.040, 0.048))
+        path.addQuadCurve(to: q(-0.075, 0), control: q(-0.076, 0.050))
         path.closeSubpath()
         return path
     }
@@ -1580,8 +1588,10 @@ private struct ArrivalsRocketArt: View {
     let porthole: Color
 
     var body: some View {
-        let hullW = edge * 0.27
-        let hullH = edge * 0.67
+        // Apple's hull is slimmer than a third of the tile and its porthole is
+        // nearly two thirds of the hull across.
+        let hullW = edge * 0.235
+        let hullH = edge * 0.70
         ZStack {
             ArrivalsFinsShape().fill(hull.opacity(0.88))
             ArrivalsHullShape().fill(hull)
@@ -1591,9 +1601,9 @@ private struct ArrivalsRocketArt: View {
                 .frame(width: hullW, height: hullH)
                 .mask(alignment: .top) { Rectangle().frame(height: hullH * 0.34) }
             Circle().fill(porthole)
-                .frame(width: edge * 0.105, height: edge * 0.105)
+                .frame(width: edge * 0.14, height: edge * 0.14)
                 .overlay(Circle().strokeBorder(.white.opacity(0.9), lineWidth: edge * 0.012))
-                .offset(y: -edge * 0.11)
+                .offset(y: -edge * 0.13)
             // Exhaust: a solid glass puff under the tail.
             ArrivalsExhaustShape().fill(hull.opacity(0.7))
         }
@@ -1614,10 +1624,10 @@ private struct ArrivalsSkirtShape: Shape {
         let s = rect.width
         func p(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: rect.minX + s * x, y: rect.minY + s * y) }
         var path = Path()
-        path.move(to: p(0.27, 0.47))
-        path.addLine(to: p(0.19, 0.76))
-        path.addQuadCurve(to: p(0.81, 0.76), control: p(0.5, 0.97))
-        path.addLine(to: p(0.73, 0.47))
+        path.move(to: p(0.29, 0.47))
+        path.addLine(to: p(0.17, 0.78))
+        path.addQuadCurve(to: p(0.83, 0.78), control: p(0.5, 0.96))
+        path.addLine(to: p(0.71, 0.47))
         path.closeSubpath()
         return path
     }
@@ -1632,29 +1642,29 @@ private struct ArrivalsLoupe: View {
             // The skirt and the bright pool of light at its foot.
             ArrivalsSkirtShape().fill(LinearGradient(colors: [.white.opacity(0.18), .white.opacity(0.38)], startPoint: .top, endPoint: .bottom))
             Ellipse().fill(.white.opacity(0.2))
-                .frame(width: edge * 0.40, height: edge * 0.11)
-                .offset(x: edge * 0.30, y: edge * 0.71)
+                .frame(width: edge * 0.44, height: edge * 0.12)
+                .offset(x: edge * 0.28, y: edge * 0.715)
             ArrivalsSkirtShape().stroke(.white.opacity(0.7), lineWidth: edge * 0.009)
             // The eyepiece: a dark drum with a lens in its top.
             Ellipse().fill(hex(0x1C1C1E))
-                .frame(width: edge * 0.52, height: edge * 0.13)
-                .offset(x: edge * 0.24, y: edge * 0.405)
+                .frame(width: edge * 0.46, height: edge * 0.115)
+                .offset(x: edge * 0.27, y: edge * 0.4125)
             Rectangle()
                 .fill(LinearGradient(colors: [hex(0x1E1E20), hex(0x46464A), hex(0x2A2A2C), hex(0x151517)], startPoint: .leading, endPoint: .trailing))
-                .frame(width: edge * 0.52, height: edge * 0.245)
-                .offset(x: edge * 0.24, y: edge * 0.225)
+                .frame(width: edge * 0.46, height: edge * 0.245)
+                .offset(x: edge * 0.27, y: edge * 0.225)
             Text("PREVIEW 10×")
-                .font(.system(size: edge * 0.04, weight: .semibold))
+                .font(.system(size: edge * 0.036, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.28))
-                .frame(width: edge * 0.52)
-                .offset(x: edge * 0.24, y: edge * 0.38)
+                .frame(width: edge * 0.46)
+                .offset(x: edge * 0.27, y: edge * 0.38)
             Ellipse().fill(LinearGradient(colors: [hex(0x5A5A5E), hex(0x28282A)], startPoint: .top, endPoint: .bottom))
-                .frame(width: edge * 0.52, height: edge * 0.15)
-                .offset(x: edge * 0.24, y: edge * 0.15)
+                .frame(width: edge * 0.46, height: edge * 0.135)
+                .offset(x: edge * 0.27, y: edge * 0.1575)
             Ellipse().fill(RadialGradient(colors: [hex(0x8FE3F6), hex(0x2F92C0), hex(0x0E3A55)],
-                                          center: .init(x: 0.45, y: 0.4), startRadius: 0, endRadius: edge * 0.17))
-                .frame(width: edge * 0.36, height: edge * 0.10)
-                .offset(x: edge * 0.32, y: edge * 0.175)
+                                          center: .init(x: 0.45, y: 0.4), startRadius: 0, endRadius: edge * 0.15))
+                .frame(width: edge * 0.32, height: edge * 0.09)
+                .offset(x: edge * 0.34, y: edge * 0.18)
         }
         .frame(width: edge, height: edge, alignment: .topLeading)
     }
@@ -1751,11 +1761,11 @@ private struct ArrivalsSiriOrb: View {
                 // Lower hemisphere: polished silver.
                 ArrivalsHorizonShape()
                     .fill(LinearGradient(stops: [
-                        .init(color: hex(0x7F848C), location: 0.45),
-                        .init(color: hex(0xC9CDD3), location: 0.62),
-                        .init(color: hex(0xF4F5F7), location: 0.80),
-                        .init(color: hex(0xB9BCC1), location: 0.93),
-                        .init(color: hex(0x85888D), location: 1.0),
+                        .init(color: hex(0x6F747C), location: 0.45),
+                        .init(color: hex(0xB8BCC2), location: 0.60),
+                        .init(color: hex(0xEFF0F2), location: 0.74),
+                        .init(color: hex(0xA2A6AB), location: 0.90),
+                        .init(color: hex(0x6A6D72), location: 1.0),
                     ], startPoint: .top, endPoint: .bottom))
                 // The lit horizon, warm on the left and cool on the right.
                 // The lit horizon: a soft glow under a thin iridescent line,

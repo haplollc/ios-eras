@@ -146,9 +146,12 @@ export class EraDevice {
       this.earpiece = h('div', 'era-earpiece', { position: 'absolute', 'border-radius': '999px' }, this.el)
       const home = h('div', 'era-home', { position: 'absolute' }, this.el)
       this.homeBg = h('div', '', { position: 'absolute', inset: '0', 'border-radius': '50%' }, home)
-      this.homeEdge = h('div', '', { position: 'absolute', inset: '0', 'border-radius': '50%', 'box-sizing': 'border-box', 'border-style': 'solid' }, home)
-      this.homeGlyph = h('div', '', { position: 'absolute', 'box-sizing': 'border-box', 'border-style': 'solid' }, home)
-      this.homeRing = h('div', '', { position: 'absolute', inset: '0', 'border-radius': '50%', 'box-sizing': 'border-box', 'border-style': 'solid' }, home)
+      // strokeBorder as an inset shadow, never a border: Chrome snaps border
+      // widths to whole CSS pixels (0.75 becomes 1, 1.69 becomes 1), which
+      // showed as a too-heavy rim and a too-thin home glyph.
+      this.homeEdge = h('div', '', { position: 'absolute', inset: '0', 'border-radius': '50%' }, home)
+      this.homeGlyph = h('div', '', { position: 'absolute' }, home)
+      this.homeRing = h('div', '', { position: 'absolute', inset: '0', 'border-radius': '50%' }, home)
       this.home = home
     }
   }
@@ -251,8 +254,7 @@ export class EraDevice {
       css(home, 'top', px(height - (look.bezelBottom * sc) / 2 - d / 2))
       css(home, 'opacity', n(Math.max(0, look.homeButton * 2 - 1)))
       css(this.homeBg!, 'background', radialGradient(`circle ${px(d * 0.62)} at 50% 50%`, `${c(look.face)} ${px(d * 0.2)}`, `${c(look.homeInk, 0.35)} ${px(d * 0.62)}`))
-      css(this.homeEdge!, 'border-width', '0.75px')
-      css(this.homeEdge!, 'border-color', c(look.homeInk, 0.5))
+      css(this.homeEdge!, 'box-shadow', `inset 0 0 0 ${px(0.75)} ${c(look.homeInk, 0.5)}`)
       const gs = d * 0.36
       const g2 = this.homeGlyph!
       css(g2, 'width', px(gs))
@@ -260,11 +262,9 @@ export class EraDevice {
       css(g2, 'left', px((d - gs) / 2))
       css(g2, 'top', px((d - gs) / 2))
       css(g2, 'border-radius', px(d * 0.09 * 1.12))
-      css(g2, 'border-width', px(Math.max(0.9, d * 0.035)))
-      css(g2, 'border-color', c(look.homeInk))
+      css(g2, 'box-shadow', `inset 0 0 0 ${px(Math.max(0.9, d * 0.035))} ${c(look.homeInk)}`)
       css(g2, 'opacity', n(look.homeGlyph))
-      css(this.homeRing!, 'border-width', px(Math.max(1, d * 0.06)))
-      css(this.homeRing!, 'border-color', c(look.frame))
+      css(this.homeRing!, 'box-shadow', `inset 0 0 0 ${px(Math.max(1, d * 0.06))} ${c(look.frame)}`)
       css(this.homeRing!, 'opacity', n(look.homeRing))
     } else {
       css(home, 'display', 'none')
@@ -395,7 +395,9 @@ export class EraStatusBar {
     }, this.el)
     this.clock.textContent = '9:41'
     this.battery = h('div', '', { position: 'absolute' }, this.el)
-    this.outline = h('div', '', { position: 'absolute', left: '0', top: '0', 'box-sizing': 'border-box', border: '0.75px solid' }, this.battery)
+    // An inset shadow, not a border: Chrome rounds a 0.75 px border up to a
+    // whole pixel, which drew the outline half as heavy again as iOS does.
+    this.outline = h('div', '', { position: 'absolute', left: '0', top: '0' }, this.battery)
     this.fill = h('div', '', { position: 'absolute' }, this.battery)
     this.nub = h('div', '', { position: 'absolute', 'border-radius': '999px' }, this.battery)
   }
@@ -421,7 +423,11 @@ export class EraStatusBar {
     css(this.clock, 'font-size', px(type))
     css(this.clock, 'color', c(ink))
     css(this.clock, 'left', px(width * look.clockX))
-    css(this.clock, 'top', px(centreY))
+    // SwiftUI centres the line box (ascent + descent + leading); CSS's
+    // 'normal' line height leaves the digits sitting lower, which read as a
+    // clock 1 pt low against the iOS captures. 0.045 em lands every year
+    // within 2/3 pt (Chrome quantises a text baseline to whole CSS pixels).
+    css(this.clock, 'top', px(centreY - type * 0.045))
 
     const bw = type * 1.9
     const bh = type * 0.9
@@ -434,7 +440,7 @@ export class EraStatusBar {
     css(this.outline, 'width', px(bodyW))
     css(this.outline, 'height', px(bh))
     css(this.outline, 'border-radius', px(bh * 0.28))
-    css(this.outline, 'border-color', c(ink, 0.45))
+    css(this.outline, 'box-shadow', `inset 0 0 0 0.75px ${c(ink, 0.45)}`)
     css(this.fill, 'left', '1.5px')
     css(this.fill, 'top', '1.5px')
     css(this.fill, 'width', px(Math.max(0, bodyW - 3)))

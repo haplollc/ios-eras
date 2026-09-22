@@ -117,12 +117,17 @@ export class TimelineView implements PageHandle {
     // Arrow keys and space work from anywhere on the page.
     this.onKeyDoc = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
-      if (target && (target.closest('input, textarea, select, [contenteditable], .ruler') || e.metaKey || e.ctrlKey || e.altKey)) return
+      if (target && (target.closest('input, textarea, select, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey)) return
       if (target && target.closest('button, a') && (e.key === ' ' || e.key === 'Enter')) return
+      // The ruler answers the arrow keys itself when it has focus; space is
+      // still ours, or it would fall through to the browser and scroll.
+      const onRuler = !!target?.closest('.ruler')
       if (e.key === 'ArrowLeft') {
+        if (onRuler) return
         e.preventDefault()
         this.ruler.step(-1)
       } else if (e.key === 'ArrowRight') {
+        if (onRuler) return
         e.preventDefault()
         this.ruler.step(1)
       } else if (e.key === ' ') {

@@ -3,7 +3,7 @@
 // layouts for screenshots (?capture=1, ?screen=1).
 
 import { clamp } from '../core/ink'
-import { h } from '../core/dom'
+import { h, px } from '../core/dom'
 import { makeShared } from './shared'
 import type { Shared } from './shared'
 import type { Env, LayoutMode, PageHandle } from './timeline'
@@ -51,6 +51,12 @@ export function mountApp(root: HTMLElement, params: URLSearchParams): void {
   let playButton: HTMLButtonElement | null = null
   let tabs: HTMLButtonElement[] = []
   let thumb: HTMLElement | null = null
+  /** Moves the white pill onto the selected tab. The two tabs are NOT the
+   *  same width once the control is squeezed (a `1fr` column never goes
+   *  below its label's min-content), so a 50%-wide thumb slid by 100% lands
+   *  under the gap between the labels and clips "Home screen". The pill is
+   *  measured from the tab itself instead. */
+  let placeThumb = (_animate = true): void => {}
   if (mode === 'page') {
     header = h('header', 'site-header', {}, root)
     const inner = h('div', 'site-header-inner', {}, header)
@@ -73,6 +79,25 @@ export function mountApp(root: HTMLElement, params: URLSearchParams): void {
       b.addEventListener('click', () => switchTo(name))
       tabs.push(b)
     }
+    const pill = thumb
+    placeThumb = (animate = true) => {
+      const tab = tabs.find((b) => b.dataset.page === pageName)
+      if (!tab || !tab.offsetWidth) return
+      // Rects, not offsetLeft/offsetWidth: those are whole numbers, and the
+      // tabs land on fractions, which left the pill up to a pixel short.
+      const box = tab.getBoundingClientRect()
+      const base = seg.getBoundingClientRect()
+      if (!animate) pill.style.transition = 'none'
+      pill.style.width = px(box.width)
+      pill.style.transform = `translateX(${box.left - base.left - 2}px)`
+      if (!animate) {
+        void pill.offsetWidth
+        pill.style.transition = ''
+      }
+    }
+    placeThumb(false)
+    new ResizeObserver(() => placeThumb(false)).observe(seg)
+    document.fonts?.ready.then(() => placeThumb(false))
     playButton = h('button', 'play', {}, controls)
     playButton.type = 'button'
     playButton.addEventListener('click', () => {
@@ -117,15 +142,20 @@ export function mountApp(root: HTMLElement, params: URLSearchParams): void {
     const vh = window.innerHeight
     const headerH = header ? header.offsetHeight : 0
     const footerH = footer ? footer.offsetHeight : 0
-    // caption (22 + 62) + ruler (78 + 18) + breathing room
-    const below = 22 + 62 + 96 + (vw < 640 ? 10 : 16)
+    // caption (22 + 62, and a third line of note under 480 px: see the
+    // .caption-note rule) + ruler (78 + 18) + breathing room
+    const below = 22 + 62 + (vw < 480 ? 17.3 : 0) + 96 + (vw < 640 ? 10 : 16)
     const byWidth = (Math.min(vw, 560) - 40) / 72
     let byHeight = (vh - headerH - below - footerH) / TALLEST_MM
     const footerFits = Math.min(byHeight, byWidth) >= 3.0
     if (!footerFits) byHeight = (vh - headerH - below) / TALLEST_MM
     root.classList.toggle('footer-below', !footerFits)
     root.style.setProperty('--header-h', `${headerH}px`)
-    return clamp(Math.min(byHeight, byWidth), 2.4, 4.8)
+    // The floor only binds on viewports under ~500 px tall. It used to be
+    // 2.4, which pushed the ruler -- the only control on the page -- clean
+    // off the bottom of an iPhone SE (320x568) and clipped its year labels
+    // in a short desktop window (1024x500).
+    return clamp(Math.min(byHeight, byWidth), 1.4, 4.8)
   }
   env.scale = computeScale()
 
@@ -154,6 +184,7 @@ export function mountApp(root: HTMLElement, params: URLSearchParams): void {
       b.classList.toggle('on', on)
     })
     if (thumb) thumb.dataset.page = pageName
+    placeThumb()
     if (playButton) {
       const playing = !!current?.playing
       playButton.innerHTML = `${playing ? icons.stop : icons.play}<span>${playing ? 'Stop' : 'Play'}</span>`
@@ -169,7 +200,9 @@ export function mountApp(root: HTMLElement, params: URLSearchParams): void {
     current?.destroy()
     current = null
     column.replaceChildren()
-    document.title = name === 'button' ? 'Button · iOS Eras' : 'iOS Eras'
+    document.title = name === 'button'
+      ? 'The button · iOS Eras'
+      : 'iOS Eras · Twenty years of iPhone, redrawn'
     const shared: Shared = makeShared(env, p)
     let handle: PageHandle
     if (name === 'button') {

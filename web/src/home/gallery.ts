@@ -3,11 +3,17 @@
 // out like HomeIconGallery.swift (and its iOS captures): a title, then a
 // four-column grid of 96 x 108 pt cells, the icon at the size it has on a
 // 375 pt wide screen with its label under it, and the year under each cell.
-// Years before the app's first design are left empty.
+// A year the app did not sit on the first page (before it shipped, after it
+// left, or while it lived in a folder) still draws it — the design nearest
+// that year, clamped to the first — faded to GHOST, label and all, with the
+// year in tertiary ink: HomeIconGallery.swift's `app.slots[index] == nil`.
 
 import { roster } from './icons/index'
-import type { HomeAppDef, IconDesign } from './icons/kit'
+import type { IconDesign } from './icons/kit'
 import { artURL, gradientStops, mixInk, rrectPath } from './icons/kit'
+import { placeApps } from './model'
+import type { HomeApp } from './model'
+import { homeTimeline } from './timeline'
 import { css, hex, ink } from '../core/ink'
 import type { Ink } from '../core/ink'
 
@@ -193,35 +199,41 @@ function tile(design: IconDesign, c: YearChrome, edge: number, isWidget: boolean
   return `<svg class="gal-tile" viewBox="0 0 100 100" width="${edge}" height="${edge}" style="left:${CELL_W / 2 - edge / 2}px;top:${CELL_H / 2 - edge / 2}px"><defs>${defs.join('')}</defs>${group}</svg>`
 }
 
-function nameAt(app: HomeAppDef, index: number): string {
-  const names = app.names ?? []
+function nameAt(app: HomeApp, index: number): string {
+  const names = app.names
   let name = names[0]?.[1] ?? app.id
   for (const [from, n] of names) if (from <= index) name = n
   return name
 }
 
-function designAt(app: HomeAppDef, index: number): IconDesign | undefined {
-  let found: IconDesign | undefined
+/** HomeApp.designIndex(at:): the last redesign that has landed by this year,
+ *  falling back to the first — so a year before the app shipped shows the
+ *  design it arrived with (faded), never nothing. */
+function designAt(app: HomeApp, index: number): IconDesign {
+  let found = app.designs[0]
   for (const d of app.designs) if (d.from <= index) found = d
   return found
 }
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-function cell(app: HomeAppDef, year: number): string {
+function cell(app: HomeApp, year: number): string {
   const c = chromeFor(year)
   const index = year - 2007
   const design = designAt(app, index)
-  let inner = swatch(c.wall)
-  if (design) {
-    const edge = SCREEN * c.iconScale
-    inner += tile(design, c, edge, (app.span ?? 1) > 1)
-    const labelY = CELL_H / 2 + edge / 2 + SCREEN * c.label.below
-    const font = `${c.label.weight} ${SCREEN * c.label.size}px ${c.label.family}`
-    inner += `<div class="gal-label" style="top:${labelY}px;font:${font};text-shadow:0 0.8px 2.6px rgba(0,0,0,${c.label.shadow})">${esc(nameAt(app, index))}</div>`
-  }
+  // Off the first page that year: the icon is there, only faded.
+  const ghost = app.slots[index] == null
+  const edge = SCREEN * c.iconScale
+  const labelY = CELL_H / 2 + edge / 2 + SCREEN * c.label.below
+  const font = `${c.label.weight} ${SCREEN * c.label.size}px ${c.label.family}`
+  // Tile and label sit under one opacity, as SwiftUI fades the whole
+  // HomeIcon; the wallpaper behind it stays at full strength.
+  const icon =
+    tile(design, c, edge, app.span > 1) +
+    `<div class="gal-label" style="top:${labelY}px;font:${font};text-shadow:0 0.8px 2.6px rgba(0,0,0,${c.label.shadow})">${esc(nameAt(app, index))}</div>`
+  const inner = swatch(c.wall) + `<div class="gal-icon"${ghost ? ' style="opacity:0.35"' : ''}>${icon}</div>`
   const clip = rrectPath(CELL_W / 2, CELL_H / 2, CELL_W, CELL_H, 10, true)
-  return `<div class="gal-cell" data-year="${year}"><div class="gal-swatch" style="clip-path:path('${clip}')">${inner}</div><div class="gal-year">${year}</div></div>`
+  return `<div class="gal-cell${ghost ? ' gal-ghost' : ''}" data-year="${year}"><div class="gal-swatch" style="clip-path:path('${clip}')">${inner}</div><div class="gal-year">${year}</div></div>`
 }
 
 // ---------------------------------------------------------------- page
@@ -235,9 +247,12 @@ html, body { margin: 0; background: #f5f5f5; }
 .gal-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .gal-swatch { position: relative; width: ${CELL_W}px; height: ${CELL_H}px; overflow: hidden; }
 .gal-wall { position: absolute; inset: 0; }
+.gal-icon { position: absolute; inset: 0; }
 .gal-tile { position: absolute; overflow: visible; }
 .gal-label { position: absolute; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; color: #fff; line-height: normal; }
 .gal-year { font-size: 11px; line-height: 13.333px; font-variant-numeric: tabular-nums; color: rgba(60,60,67,0.6); }
+/* A ghost year's number drops from .secondary to .tertiary. */
+.gal-ghost .gal-year { color: rgba(60,60,67,0.3); }
 .gal-missing { text-align: center; color: rgba(60,60,67,0.6); font-size: 15px; line-height: 1.5; }
 .gal-missing a { color: #007aff; text-decoration: none; margin: 0 6px; display: inline-block; }
 `
@@ -248,7 +263,9 @@ export function mountGallery(root: HTMLElement, appID: string): void {
   document.head.appendChild(tag)
   document.title = `${appID} · iOS Eras gallery`
 
-  const app = roster.find((a) => a.id === appID)
+  // Placed on every era, so each cell knows whether the app sat on that
+  // year's first page (full strength) or not (ghost).
+  const app = placeApps(roster, homeTimeline).find((a) => a.id === appID)
   if (!app) {
     const links = roster.map((a) => `<a href="?gallery=${encodeURIComponent(a.id)}">${esc(a.id)}</a>`).join(' ')
     root.innerHTML = `<div class="gal"><h1>${esc(appID)}</h1><p class="gal-missing">No app with that id.${links ? `<br>${links}` : ''}</p></div>`

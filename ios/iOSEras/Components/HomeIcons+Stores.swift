@@ -992,16 +992,18 @@ private struct StoresContactRing: View {
     var body: some View {
         let ink = hex(0xA9A29A)
         ZStack {
+            // Apple's shoulders are a wide circular cap that runs INTO the ring and merges with it,
+            // not a rounded box floating clear of it: a 0.567 disc set low, clipped by the ring's
+            // OUTER edge (0.31). Head, body and ring are measured off the shipping iOS 18 icon.
             Circle().strokeBorder(ink, lineWidth: edge * stroke)
-                .frame(width: edge * 0.63, height: edge * 0.63)
-                .position(x: edge * 0.435, y: edge * 0.50)
+                .frame(width: edge * 0.62, height: edge * 0.62)
+                .position(x: edge * 0.434, y: edge * 0.50)
             ZStack {
-                Circle().fill(ink).frame(width: edge * 0.205, height: edge * 0.205).position(x: edge * 0.435, y: edge * 0.44)
-                RoundedRectangle(cornerRadius: edge * 0.17, style: .continuous).fill(ink)
-                    .frame(width: edge * 0.46, height: edge * 0.40).position(x: edge * 0.435, y: edge * 0.825)
+                Circle().fill(ink).frame(width: edge * 0.218, height: edge * 0.218).position(x: edge * 0.434, y: edge * 0.432)
+                Circle().fill(ink).frame(width: edge * 0.567, height: edge * 0.567).position(x: edge * 0.434, y: edge * 0.883)
             }
             .frame(width: edge, height: edge)
-            .clipShape(StoresDisc(centre: CGPoint(x: 0.435, y: 0.5), radius: 0.315 - stroke * 0.5))
+            .clipShape(StoresDisc(centre: CGPoint(x: 0.434, y: 0.5), radius: 0.31))
             StoresTabColumn(edge: edge, width: 0.115, colours: [hex(0xC4C2BA), hex(0x5AC8FA), hex(0xFF9500), hex(0x4CD964)])
         }
         .frame(width: edge, height: edge)
@@ -1652,15 +1654,18 @@ private struct StoresTVSet: View {
     let edge: CGFloat
 
     var body: some View {
+        // Measured off the shipping iOS 10.2 icon: the bezel is a heavy 0.033 line (this was 0.024,
+        // a third too light), the set 0.712 x 0.442 and the stand bar 0.398 x 0.041 - which leaves
+        // the picture inside the same 0.646 wide.
         let frame = RoundedRectangle(cornerRadius: edge * 0.02, style: .continuous)
         ZStack {
             frame
                 .fill(LinearGradient(colors: [hex(0x4FE9B8), hex(0x51E3CB), hex(0x38AAD3)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .overlay(frame.strokeBorder(.white, lineWidth: edge * 0.024))
-                .frame(width: edge * 0.70, height: edge * 0.43)
+                .overlay(frame.strokeBorder(.white, lineWidth: edge * 0.033))
+                .frame(width: edge * 0.712, height: edge * 0.442)
                 .offset(y: -edge * 0.039)
             RoundedRectangle(cornerRadius: edge * 0.006, style: .continuous).fill(.white)
-                .frame(width: edge * 0.386, height: edge * 0.031)
+                .frame(width: edge * 0.398, height: edge * 0.041)
                 .offset(y: edge * 0.2305)
         }
     }
@@ -1689,15 +1694,22 @@ private struct StoresTVWordmark: View {
         }
     }
 
+    /// Apple's own mark sets the apple and the "tv" on ONE baseline: the logo's ink ends where the
+    /// letters do. SF's apple.logo hangs below the text baseline, so it is lifted back onto it (and
+    /// grown to match), the pair is closed up and centred, and the whole mark sits a little high, as
+    /// the shipping icon does. `fixedSize` keeps the Text at its ideal width: inside `sheen` the mask
+    /// re-proposes the HStack's own (rounded) width, and a hair less than ideal truncated "tv" to "…".
     private var mark: some View {
-        HStack(alignment: .lastTextBaseline, spacing: edge * 0.02) {
+        HStack(alignment: .lastTextBaseline, spacing: 0) {
             Image(systemName: "apple.logo")
-                .font(.system(size: edge * 0.405, weight: .medium))
+                .font(.system(size: edge * 0.413, weight: .medium))
+                .offset(y: -edge * 0.034)
             Text("tv")
                 .font(.system(size: edge * 0.535, weight: .semibold))
                 .kerning(-edge * 0.012)
+                .fixedSize()
         }
-        .offset(y: -edge * 0.015)
+        .offset(x: -edge * 0.011, y: -edge * 0.037)
     }
 
     /// Where each sweep colour sits across the mark: violet to green under the logo, yellow-green in the t,

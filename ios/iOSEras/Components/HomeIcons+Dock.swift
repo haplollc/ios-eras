@@ -147,11 +147,13 @@ extension HomeApp {
                             tickInk: .white, tickWidth: 0.009, roundTicks: true,
                             angle: 50, tip: 0.92, base: 0.23, red: hex(0xFF3B30), white: .white)
             }),
-            // iOS 26: off-white glass tile, smaller lens (0.80), pale ticks,
-            // the needle back at 45 degrees.
+            // iOS 26: off-white glass tile, smaller lens (0.80), 48 pale
+            // ticks (24 long, 24 short, measured 7.5 degrees apart), the
+            // needle back at 45 degrees.
             design(2025, 0xFFFFFF, 0xECECEC, art { edge in
                 DockCompass(edge: edge, disc: 0.80, face: [hex(0x5ABDF9), hex(0x1D74FD)],
-                            tickInk: hex(0xD6ECFE, 0.85), tickWidth: 0.009, roundTicks: true,
+                            ticks: 48, tickInk: hex(0xD6ECFE, 0.85), shortInner: 0.80,
+                            tickWidth: 0.009, roundTicks: true,
                             angle: 45, tip: 0.91, base: 0.23, red: hex(0xFF413B), white: hex(0xEBF5FF),
                             glass: true)
             }),
@@ -390,8 +392,58 @@ private enum DockHandsetLook {
     case glass(tint: Color)
 }
 
-/// The handset: earpiece top-left, mouthpiece bottom-right. SF Symbols'
-/// phone.fill is Apple's own reading of the same silhouette.
+/// The handset: earpiece top-left, mouthpiece bottom-right.
+///
+/// Apple's handset is not a bar of one thickness: it is a band whose
+/// centreline follows a single arc and whose walls taper to a thin waist at
+/// the elbow (about 0.09 off the centreline) and flare out again at both
+/// ends (about 0.17). The arc below is fitted through the three points
+/// measured off the icon - earpiece end, elbow, mouthpiece end - in the
+/// glyph's unit box, and `outline` is the silhouette as (degrees, radius)
+/// anchors round that centre. An SF Symbol would drift from the web port,
+/// so the shape is drawn from the same anchors in both.
+private struct DockHandsetShape: Shape {
+    /// Pushes every wall away from the centreline: 1 is Apple's handset,
+    /// and the chunkier iPhone OS 1-2 one is a little fuller.
+    var weight: Double = 1
+
+    static let centre = CGPoint(x: 0.80762, y: 0.22189)
+    static let radius: Double = 0.64145
+
+    /// One closed loop: down the OUTER edge from the earpiece to the
+    /// mouthpiece, round the mouthpiece's cap, back up the INNER edge
+    /// through the waist, and round the earpiece's cap.
+    static let outline: [(Double, Double)] = [
+        (198, 0.6963), (192, 0.7630), (186, 0.7993), (178, 0.8134), (170, 0.7993), (162, 0.7811),
+        (152, 0.7569), (142, 0.7408), (132, 0.7387), (122, 0.7428), (112, 0.7589), (102, 0.7791),
+        (94, 0.7892), (86, 0.7751), (78, 0.7206), (74, 0.6741),
+        (72.3, 0.6227),
+        (74, 0.5672), (78, 0.5248), (86, 0.4582), (94, 0.4218), (102, 0.4340), (110, 0.4945),
+        (116, 0.5430), (126, 0.5409), (138, 0.5430), (150, 0.5530), (158, 0.5591), (164, 0.5066),
+        (172, 0.4501), (178, 0.4420), (186, 0.4844), (192, 0.5349), (198, 0.6075),
+        (200.3, 0.6519),
+    ]
+
+    func path(in rect: CGRect) -> Path {
+        let points = Self.outline.map { (degrees, r) -> CGPoint in
+            let a = degrees * .pi / 180
+            let rr = Self.radius + (r - Self.radius) * weight
+            return CGPoint(x: rect.minX + rect.width * (Self.centre.x + rr * cos(a)),
+                           y: rect.minY + rect.height * (Self.centre.y + rr * sin(a)))
+        }
+        func mid(_ a: CGPoint, _ b: CGPoint) -> CGPoint { CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2) }
+        var path = Path()
+        let n = points.count
+        path.move(to: mid(points[n - 1], points[0]))
+        for i in 0..<n {
+            path.addQuadCurve(to: mid(points[i], points[(i + 1) % n]), control: points[i])
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// The handset in one era's finish.
 private struct DockHandset: View {
     let edge: CGFloat
     let box: DockBox
@@ -414,17 +466,14 @@ private struct DockHandset: View {
     }
 
     private func glyph<S: ShapeStyle>(_ style: S) -> some View {
-        Image(systemName: "phone.fill")
-            .resizable()
-            .scaledToFit()
-            .fontWeight(weight)
-            .foregroundStyle(style)
+        DockHandsetShape(weight: weight)
+            .fill(style)
             .dockBox(box, edge)
     }
 
-    private var weight: Font.Weight {
-        if case .skeuomorphic(let heavy) = look { return heavy ? .black : .regular }
-        return .medium
+    private var weight: Double {
+        if case .skeuomorphic(let heavy) = look { return heavy ? 1.16 : 1 }
+        return 1
     }
 }
 
@@ -462,12 +511,15 @@ private struct DockBubbleShape: Shape {
     var tailTo: Double
     var tip: CGPoint
 
-    /// iOS 7.0 - 18: bbox x 0.135-0.863, y 0.176-0.822.
+    /// iOS 7.0 - 18: bbox x 0.135-0.863, y 0.176-0.822. The tail is a narrow
+    /// nub, not a thumb: its roots are only 14 degrees apart on the ellipse
+    /// (measured at 0.308, 0.733 and 0.387, 0.763).
     static let flat = DockBubbleShape(centre: CGPoint(x: 0.499, y: 0.475), rx: 0.364, ry: 0.30,
-                                      tailFrom: 127, tailTo: 106, tip: CGPoint(x: 0.26, y: 0.82))
-    /// iOS 26: the same body with a slightly softer, shorter tail.
-    static let glass = DockBubbleShape(centre: CGPoint(x: 0.50, y: 0.472), rx: 0.366, ry: 0.291,
-                                       tailFrom: 127, tailTo: 106, tip: CGPoint(x: 0.27, y: 0.784))
+                                      tailFrom: 122, tailTo: 108, tip: CGPoint(x: 0.264, y: 0.82))
+    /// iOS 26: a slightly narrower body, and a longer tail that leaves the
+    /// ellipse higher (measured root 0.185, 0.64) and sweeps further left.
+    static let glass = DockBubbleShape(centre: CGPoint(x: 0.496, y: 0.48), rx: 0.354, ry: 0.30,
+                                       tailFrom: 148, tailTo: 123, tip: CGPoint(x: 0.187, y: 0.776))
 
     func path(in rect: CGRect) -> Path {
         let side = min(rect.width, rect.height)
@@ -731,7 +783,8 @@ private struct DockCompass: View {
     var tickInk: Color
     var longInner: Double = 0.75
     var shortInner: Double = 0.83
-    var tickOuter: Double = 0.92
+    /// Ticks run out to the disc's rim, which is where Apple's stop.
+    var tickOuter: Double = 0.985
     /// Tick width as a share of the icon side.
     var tickWidth: Double
     var roundTicks: Bool
@@ -1013,7 +1066,10 @@ private struct DockCornerGlow: View {
 }
 
 /// The beamed note filled in one style, with a round-joined stroke of the
-/// same style to soften the corners the way Apple's glyph does.
+/// same style to soften the corners the way Apple's glyph does. The stroke
+/// is kept narrow: a wide one rounds the corners nicely but also grows the
+/// whole glyph by half its width, which reads as a bolder note than Apple's
+/// (measured 11% heavier at 0.018).
 private struct DockNote<S: ShapeStyle>: View {
     let edge: CGFloat
     let geometry: DockNoteShape.Geometry
@@ -1025,7 +1081,7 @@ private struct DockNote<S: ShapeStyle>: View {
         ZStack {
             DockNoteShape(geometry: geometry).fill(style)
             DockNoteShape(geometry: geometry)
-                .stroke(style, style: StrokeStyle(lineWidth: max(0.5, edge * 0.018), lineJoin: .round))
+                .stroke(style, style: StrokeStyle(lineWidth: max(0.4, edge * 0.010), lineJoin: .round))
         }
         .frame(width: edge, height: edge)
         .compositingGroup()

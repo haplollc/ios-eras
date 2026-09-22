@@ -11,7 +11,7 @@ import { blendInk, css as cssInk, lerp } from '../core/ink'
 import { blendDevice, blendScreen, fontCSS, segment } from '../core/looks'
 import { EraBackdrop, EraDevice, EraStatusBar, shadowBlur } from '../core/device'
 import { attr, css, h, linearGradient, n, px, s, text, uid } from '../core/dom'
-import { artURL, symbol } from './icons/kit'
+import { artURL, artURLAt, symbol } from './icons/kit'
 import type { IconDesign } from './icons/kit'
 import type { HomeApp, HomeChrome, HomeEra, Point, Rect } from './model'
 import { HomeLayout, appName, blendChrome, blendPoint, blendRect, designIndex } from './model'
@@ -55,6 +55,35 @@ function magnifier(parent: HTMLElement): SVGSVGElement {
 
 const artSource = (d: IconDesign): string => d.imageURL ?? artURL(d.art)
 
+/** The scale the SwiftUI app draws at, CSS px (there, points) per mm of
+ *  iPhone. Its art clamps hairlines in points, so a view at another scale
+ *  divides by this to ask for the art at the size iOS would be drawing. */
+const IOS_SCALE = 4.3
+
+/** The apps whose SwiftUI art clamps its hairlines — `max(0.5, edge * f)`
+ *  on a rule, a rim, a tick, a crosshair — so that however small the icon
+ *  is drawn those lines stay half a point wide. Their miniatures in a
+ *  folder ask for art rendered with the same floor; see "hairlines" in
+ *  kit.ts. Every other app's thin lines are plain fractions of the edge,
+ *  and Measure's ruler ticks, the Watch's band and a Voice Memos waveform
+ *  really do fade to nothing on the phone at 8 pt, so those miniatures use
+ *  the ordinary full-size drawing.
+ *
+ *  The list is read off HomeIcons+*.swift, struct by struct: an app is in
+ *  it when the art it uses in the folder years clamps. Put an app here
+ *  only after checking its Swift, and after looking at the miniature: the
+ *  floor cannot tell a clamped line from an unclamped one of the same
+ *  width, so it is the app that says whether to apply it. */
+const HAIRLINE_CLAMPED = new Set([
+  'Calculator', // PaperCalcKeys, PaperFlatCalculator
+  'Clock', // MediaClockArt
+  'Compass', // PaperBrassCompass, PaperDialCompass
+  'Notes', // PaperLegalPad, PaperFlatPad
+  'Reminders', // PaperReminderRows, PaperReminderCard
+  'Settings', // PaperGearHub, PaperGearPlate
+  'Stocks', // PaperStocksSky, PaperStocksChart
+])
+
 // ---------------------------------------------------------------- one icon
 
 export interface HomeIconState {
@@ -70,6 +99,9 @@ export interface HomeIconState {
   /** For the folder: the apps inside it, drawn as mini icons. */
   contents?: HomeApp[] | null
   yearIndex?: number
+  /** CSS px per mm of iPhone, for the folder's hairline floor. Left out,
+   *  the view is taken to be drawn at the iOS scale. */
+  scale?: number
 }
 
 /** Images keyed by URL, each created once and afterwards only shown,
@@ -101,6 +133,11 @@ class ImageSet {
       img.src = url
       this.box.appendChild(img)
       this.imgs.set(url, img)
+      // Decode now rather than on the frame that first shows it: the first
+      // pull of a scrub reveals two dozen icons at once.
+      img.decode?.().catch(() => {
+        /* replaced before it decoded */
+      })
     }
     return img
   }
@@ -189,7 +226,7 @@ export class HomeIconView {
     this.overs.begin()
     if (contents) {
       if (!this.folder) this.folder = new HomeFolderTile(tile, this.gloss)
-      this.folder.update(contents, st.yearIndex ?? st.lower, chrome, edge)
+      this.folder.update(contents, st.yearIndex ?? st.lower, chrome, edge, st.scale ?? IOS_SCALE)
     } else {
       if (this.folder) this.folder.hide()
       // The old artwork sinks back as the new one comes forward.
@@ -261,16 +298,21 @@ class HomeFolderTile {
     css(this.root, 'display', 'none')
   }
 
-  update(contents: HomeApp[], yearIndex: number, chrome: HomeChrome, edge: number): void {
+  update(contents: HomeApp[], yearIndex: number, chrome: HomeChrome, edge: number, scale: number): void {
     css(this.root, 'display', 'block')
     const skeuo = chrome.gloss > 0.5
     const mini = edge * (skeuo ? 0.21 : 0.2)
+    // What this miniature measures on the iPhone itself, in points: the
+    // size the Swift art's `max(0.5, edge * f)` clamps were written for.
+    const miniPt = mini * (IOS_SCALE / (scale > 0 ? scale : IOS_SCALE))
     const gap = edge * (skeuo ? 0.07 : 0.055)
     if (skeuo) {
       css(this.frost, 'display', 'none')
       css(this.root, 'background', 'rgb(61,61,61)')
       css(this.edgeEl, 'display', 'block')
-      css(this.edgeEl, 'border-width', px(Math.max(0.8, edge * 0.07)))
+      // Padding, not a border: Chrome snaps border widths to whole CSS
+      // pixels, which made the folder's bevel a third too thin.
+      css(this.edgeEl, 'padding', px(Math.max(0.8, edge * 0.07)))
     } else {
       css(this.root, 'background', 'transparent')
       css(this.frost, 'display', 'block')
@@ -297,8 +339,9 @@ class HomeFolderTile {
       css(m.el, 'height', px(mini))
       css(m.el, 'border-radius', px(mini * chrome.cornerRatio))
       css(m.el, 'background', linearGradient('180deg', c(d.top), c(d.bottom)))
-      m.arts.show(artSource(d), 1, 1, 1)
-      if (d.over && !d.imageURL) m.arts.show(artURL(d.over), 1, 1, 2)
+      const small = HAIRLINE_CLAMPED.has(app.id) ? miniPt : 0
+      m.arts.show(d.imageURL ?? artURLAt(d.art, small), 1, 1, 1)
+      if (d.over && !d.imageURL) m.arts.show(artURLAt(d.over, small), 1, 1, 2)
       m.arts.end()
     })
   }
@@ -625,7 +668,7 @@ export class HomeErasStage {
         ? eras[near].folder.map((id) => this.byID.get(id)).filter((a): a is HomeApp => !!a)
         : null
       const e = app.span > 1 ? layoutB.widgetEdge : docked ? dockEdge : edge
-      view.update({ lower, upper, t, chrome, edge: e, width: W, docked, contents, yearIndex: near })
+      view.update({ lower, upper, t, chrome, edge: e, width: W, docked, contents, yearIndex: near, scale: this.device.scale })
       const k = 0.35 + 0.65 * presence
       css(view.el, 'transform', `translate(${px(anchor.x - e / 2)}, ${px(anchor.y - e / 2)})${k === 1 ? '' : ` scale(${n(k)})`}`)
       css(view.el, 'opacity', n(presence))

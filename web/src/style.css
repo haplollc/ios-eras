@@ -105,6 +105,8 @@ a {
   isolation: isolate;
 }
 
+/* Width and offset are measured from the selected tab (see placeThumb in
+   ui/app.ts): the two columns are not equal once the control is squeezed. */
 .segmented-thumb {
   position: absolute;
   top: 2px;
@@ -114,12 +116,8 @@ a {
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
-  transition: transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1);
+  transition: transform 0.28s cubic-bezier(0.3, 0.9, 0.3, 1), width 0.28s cubic-bezier(0.3, 0.9, 0.3, 1);
   z-index: -1;
-}
-
-.segmented-thumb[data-page='button'] {
-  transform: translateX(100%);
 }
 
 .segmented-item {
@@ -152,6 +150,8 @@ a {
 .play {
   appearance: none;
   border: 0;
+  position: relative;
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -183,6 +183,7 @@ a {
 .sound {
   appearance: none;
   border: 0;
+  flex: none;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -216,6 +217,15 @@ a {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* A short column (the button page's "Button only" swatch) sits in the middle
+   of the page rather than leaving a hole above the footer. `safe` keeps a
+   column taller than the space from being clipped at the top; browsers
+   without it fall back to the old top alignment. Only in page mode: the
+   capture layouts start the stage row at a fixed offset. */
+.mode-page .column {
+  justify-content: safe center;
 }
 
 .site-footer {
@@ -541,12 +551,15 @@ a {
   background: linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)), rgba(245, 245, 245, 0.36);
 }
 
+/* The skeuomorphic folder's bevel: a gradient stroke whose width is the
+   element's padding, because a CSS border would be snapped to whole pixels. */
 .hf-edge {
   position: absolute;
   inset: 0;
-  border-style: solid;
-  border-color: transparent;
-  border-image: linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35)) 1;
+  background: linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 
 .hf-mini {
@@ -627,5 +640,43 @@ a {
   .segmented-thumb,
   .ruler-label {
     transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------- very narrow
+
+   Below ~352 px the header row (segmented + Play + sound) is wider than the
+   16 px gutters allow, and the flex squeeze pushes the segmented control off
+   the left edge. Trim the tab padding, then drop the Play label. */
+
+/* Two lines of note fit the 440 pt iOS page; on a phone several years need a
+   third, which used to spill out of the fixed-height box onto the ruler
+   (home 2015 did it even at 414 px). Reserve the third line here, and tell
+   computeScale about it. Page mode only, so the captures keep their box. */
+@media (max-width: 479px) {
+  .mode-page .caption-note {
+    height: 51.9px;
+  }
+}
+
+@media (max-width: 379px) {
+  .segmented-item {
+    padding: 6px 11px;
+  }
+}
+
+@media (max-width: 352px) {
+  .play {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+  .play span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

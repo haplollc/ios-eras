@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="iOS Eras">
+  <rect width="64" height="64" rx="14" fill="#0b0b0c"/>
+  <!-- a phone glyph: rounded body, a screen, a dot for the camera -->
+  <rect x="20" y="11" width="24" height="42" rx="6.5" fill="none" stroke="#ffffff" stroke-width="3.2"/>
+  <rect x="24.6" y="19" width="14.8" height="26" rx="3" fill="#3d7bff"/>
+  <circle cx="32" cy="15.4" r="1.5" fill="#ffffff"/>
+</svg>

@@ -32,6 +32,13 @@
 //   show through each other). place({ opacity }) and <g opacity> fade the
 //   group as one, which is `.compositingGroup().opacity()`. To match plain
 //   SwiftUI, put opacity="..." on each element.
+// - The Swift art clamps its hairlines in POINTS, not in fractions of the
+//   tile: `max(0.5, edge * f)` for rules, rims, ticks and crosshairs. An
+//   icon file bakes that clamp at the edge the icon is normally drawn at
+//   (60 pt), so a 100-box drawing scaled to a folder's ~8 pt miniature
+//   would land at a tenth of a point and all but vanish, where iOS still
+//   draws half a point. artURLAt() re-renders the art with the floor the
+//   clamp gives at that size; see "hairlines" below.
 
 import { hex as hexColour } from '../../core/ink'
 import type { Ink } from '../../core/ink'
@@ -322,6 +329,72 @@ export function angular(k: Kit, list: Array<Stop | string>, cx = 50, cy = 50, st
   return `url(#${id})`
 }
 
+// ---------------------------------------------------------------- hairlines
+// The Swift art never lets a line get thinner than a fraction of a point:
+// every rule, rim, tick and crosshair is written `max(minPt, edge * f)`,
+// with minPt 0.4 to 1.0 and 0.5 by far the commonest. The icon files port
+// that clamp at the edge the icon is normally drawn at, which is right for
+// a 60 pt tile and eight times too thin for the ~8 pt miniatures inside a
+// folder: iOS draws those ticks at a solid half point, the web drew them at
+// 0.07 pt, a fifth of a device pixel.
+//
+// So the miniature gets its own rendering of the same art, with a floor
+// under its hairlines: `HAIRLINE_PT` expressed in the 100 box at the size
+// the art is really drawn. The floor is quantised and cached (artURLAt),
+// so a scrub reuses two or three renderings per design rather than making
+// one a frame, and art drawn big shares the ordinary full-size drawing
+// byte for byte, since there the floor is under a unit and iOS's clamp
+// does not bite either.
+//
+// A rendering cannot tell a clamped line from an unclamped one of the same
+// width, and plenty of thin lines in the Swift art are NOT clamped, so the
+// floor is fenced twice: it only touches lines under HAIRLINE_CEILING_PT
+// (no clamp can produce a wider one), and only the caller decides which
+// art gets it at all — see HAIRLINE_CLAMPED in ../stage.ts.
+
+/** The thinnest line iOS draws, in points (SwiftUI's `max(0.5, ...)`). */
+export const HAIRLINE_PT = 0.5
+
+/** A clamp can only have produced a width up to its own minimum, and no
+ *  minimum in the Swift art is above a point, so a line wider than this
+ *  many points at the size the art was drawn for is a plain fraction of
+ *  the edge — a band or a waveform, which does thin out on the phone —
+ *  and the floor leaves it alone. */
+const HAIRLINE_CEILING_PT = 1.0
+
+/** The edge, in points, the icon files bake their own clamps at (60 pt,
+ *  or a shade more before iOS 7): what a width in the 100 box is a width
+ *  OF. Only used to read the ceiling, so the odd era is close enough. */
+const ART_EDGE_PT = 60
+
+/** In the 100 box: wider than this and the line is not a hairline. */
+const CEILING = (HAIRLINE_CEILING_PT * 100) / ART_EDGE_PT
+
+/** Below this the floor is not worth applying: it is thinner than the
+ *  lines the art already draws, as at every full-size icon. */
+const FLOOR_OFF = 1
+
+// The floor in force while renderArt is building, in 100-box units.
+let floor = 0
+
+/** A hairline the floor may widen: thin enough to be one of Swift's
+ *  clamped lines, and thinner than the floor. */
+const hairline = (v: number): boolean => floor > 0 && v > 0 && v < floor && v <= CEILING
+
+/** Widens a hairline to the floor. A dimension is only a line if the shape
+ *  is long the other way: a 2 x 2 dot is a dot at any size, and iOS leaves
+ *  it alone. */
+const wide = (v: number, across: number): number => (hairline(v) && across >= floor * 3 ? floor : v)
+
+/** The floor under every stroke, for widths written straight into markup
+ *  (`extra`) rather than through ring(). Idempotent. */
+function floorStrokes(markup: string): string {
+  if (floor <= 0) return markup
+  return markup.replace(/stroke-width="([0-9.]+)"/g, (whole, v: string) =>
+    hairline(parseFloat(v)) ? `stroke-width="${f(floor)}"` : whole,
+  )
+}
+
 // ---------------------------------------------------------------- shapes
 // All take the CENTRE of the shape (SwiftUI frame + offset) unless noted.
 // `extra` is appended raw to the element (e.g. `opacity="0.5"`,
@@ -330,7 +403,12 @@ export function angular(k: Kit, list: Array<Stop | string>, cx = 50, cy = 50, st
 const f = (v: number) => +v.toFixed(3)
 
 export function rect(cx: number, cy: number, w: number, h: number, fill: string, extra = ''): string {
-  return `<rect x="${f(cx - w / 2)}" y="${f(cy - h / 2)}" width="${f(w)}" height="${f(h)}" fill="${fill}" ${extra}/>`
+  // A filled Rectangle is how Swift draws its notepad rules and the
+  // compass crosshair, both of them clamped in points, so a bar thinner
+  // than the hairline floor widens about its own centre.
+  const bw = wide(w, h)
+  const bh = wide(h, w)
+  return `<rect x="${f(cx - bw / 2)}" y="${f(cy - bh / 2)}" width="${f(bw)}" height="${f(bh)}" fill="${fill}" ${extra}/>`
 }
 
 // Outlines as path data, wound like CoreGraphics (clockwise on screen,
@@ -431,7 +509,10 @@ export function capsule(cx: number, cy: number, w: number, h: number, fill: stri
 /** A stroked ring, like Circle().strokeBorder(colour, lineWidth: lw) on a
  *  frame of diameter d (the stroke sits inside the frame). */
 export function ring(cx: number, cy: number, d: number, lw: number, colour: string, extra = ''): string {
-  return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(d / 2 - lw / 2)}" fill="none" stroke="${colour}" stroke-width="${f(lw)}" ${extra}/>`
+  // strokeBorder keeps its outer edge on the frame, so the floor grows the
+  // rim inwards, as the clamp does in Swift.
+  const w = hairline(lw) ? Math.min(floor, d) : lw
+  return `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(d / 2 - w / 2)}" fill="none" stroke="${colour}" stroke-width="${f(w)}" ${extra}/>`
 }
 
 export function path(d: string, fill: string, extra = ''): string {
@@ -551,23 +632,57 @@ export function symbol(name: SymbolName, colour: string, size: number, cx = 50, 
 
 // ---------------------------------------------------------------- render
 
-/** A whole icon layer as a standalone SVG document string (100 x 100). */
-export function renderArt(art: Art, idPrefix: string): string {
+/** A whole icon layer as a standalone SVG document string (100 x 100).
+ *  `minLine` is the thinnest line the drawing may contain, in 100-box
+ *  units; 0 (the default) draws it exactly as the icon file wrote it. */
+export function renderArt(art: Art, idPrefix: string, minLine = 0): string {
   const k = new Kit(idPrefix)
-  const body = art(k)
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" overflow="visible">${k.defsMarkup}${body}</svg>`
+  floor = minLine > FLOOR_OFF ? minLine : 0
+  try {
+    const body = floorStrokes(art(k))
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" overflow="visible">${k.defsMarkup}${body}</svg>`
+  } finally {
+    floor = 0
+  }
 }
 
 const urlCache = new WeakMap<Art, string>()
+const smallCache = new WeakMap<Art, Map<number, string>>()
 let counter = 0
+
+const dataURL = (art: Art, minLine: number): string => {
+  counter += 1
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderArt(art, `a${counter}`, minLine))}`
+}
 
 /** A data URL for an art layer, cached per Art function. */
 export function artURL(art: Art): string {
   const hit = urlCache.get(art)
   if (hit) return hit
-  counter += 1
-  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(renderArt(art, `a${counter}`))}`
+  const url = dataURL(art, 0)
   urlCache.set(art, url)
+  return url
+}
+
+/** A data URL for an art layer about to be drawn `edgePt` points across,
+ *  with iOS's hairline clamp applied at that size (see "hairlines").
+ *  Rounded to half a unit and cached, so the handful of miniature sizes a
+ *  scrub passes through cost a handful of renderings, not one a frame.
+ *  Art drawn big enough that the clamp does not bite shares the ordinary
+ *  full-size drawing, byte for byte. */
+export function artURLAt(art: Art, edgePt: number): string {
+  if (!(edgePt > 0)) return artURL(art)
+  const minLine = Math.round(((HAIRLINE_PT * 100) / edgePt) * 2) / 2
+  if (minLine <= FLOOR_OFF) return artURL(art)
+  let sizes = smallCache.get(art)
+  if (!sizes) {
+    sizes = new Map()
+    smallCache.set(art, sizes)
+  }
+  const hit = sizes.get(minLine)
+  if (hit) return hit
+  const url = dataURL(art, minLine)
+  sizes.set(minLine, url)
   return url
 }
 

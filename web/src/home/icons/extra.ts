@@ -251,11 +251,13 @@ const camera: Record<'ios7' | 'ios11' | 'ios12' | 'ios18' | 'ios26', CameraSpec>
     hood: { x0: 0.676, x1: 0.836, inner: 0.086, outer: 0.218, radius: 0.04 },
     centreY: 0.5,
   },
-  /** iOS 26-27: a taller body and a shorter, rounder hood. */
+  /** iOS 26-27: a taller body and a slim wedge of a hood all but touching
+   *  it. Fitted to Apple's icon, whose hood is half 0.092 high at x 0.67
+   *  and 0.204 at x 0.80 (the old blunt trapezoid was 0.076 and 0.173). */
   ios26: {
     box: ubox(0.148, 0.258, 0.652, 0.738),
     boxRadius: 0.085,
-    hood: { x0: 0.682, x1: 0.859, inner: 0.119, outer: 0.195, radius: 0.045 },
+    hood: { x0: 0.66, x1: 0.86, inner: 0.085, outer: 0.25, radius: 0.04 },
     centreY: 0.5,
   },
 }
@@ -342,7 +344,7 @@ function podcastsArt(look: PodcastsLook): Art {
           podcastRing(k, 0.212, w, 36, 0.458, white) +
           podcastHead(0.433, 0.167, white) +
           path(
-            taperPath(0.55, refined ? 0.878 : 0.883, refined ? 0.082 : 0.08, refined ? 0.062 : 0.06, refined ? 0.056 : 0.06),
+            taperPath(0.55, refined ? 0.878 : 0.883, refined ? 0.09 : 0.088, refined ? 0.056 : 0.054, refined ? 0.056 : 0.06),
             white,
           )
         )
@@ -357,7 +359,7 @@ function podcastsArt(look: PodcastsLook): Art {
           podcastHead(0.447, 0.172, deep ? hex(0xf4e8fd) : hex(0xfbf7fe)) +
           glassGlyph(
             k,
-            taperPath(0.562, 0.902, 0.096, 0.062, 0.062),
+            taperPath(0.562, 0.865, 0.095, 0.066, 0.062),
             deep ? hex(0xf4e8fd) : hex(0xfcf9ff),
             deep ? hex(0xdcc6ee, 0.8) : hex(0xe4d7ee, 0.78),
             hex(0x4a1b78, 0.35),
@@ -405,7 +407,7 @@ function activityArt(look: RingsLook): Art {
   return (k) => {
     const glass = look === 'ios26' || look === 'ios27'
     const radii = glass ? [0.357, 0.2445, 0.131] : [0.387, 0.2635, 0.139]
-    const line = (glass ? 0.09 : 0.094) * 100
+    const line = (glass ? 0.086 : 0.094) * 100
     let out = ''
     ringColours[look].forEach(([s, e], i) => {
       const r = radii[i] * 100
@@ -443,8 +445,11 @@ function bulbPath(o: { centreY: number; radius: number; leave: number; neckY: nu
 }
 
 /** The T-shaped filament: a bar and a stem, each its own capsule. */
-function filament(barY: number, barHalf: number, stemBottom: number, ink: string): string {
-  return capsule(50, barY * 100, barHalf * 200, 2.8, ink) + capsule(50, (barY + stemBottom) * 50, 3.4, (stemBottom - barY) * 100, ink)
+function filament(barY: number, barHalf: number, stemBottom: number, ink: string, barH = 0.028, stemW = 0.034): string {
+  return (
+    capsule(50, barY * 100, barHalf * 200, barH * 100, ink) +
+    capsule(50, (barY + stemBottom) * 50, stemW * 100, (stemBottom - barY) * 100, ink)
+  )
 }
 
 const band = (y: number, half: number, height: number, ink: string): string => capsule(50, y * 100, half * 200, height * 100, ink)
@@ -478,9 +483,11 @@ function tipsArt(look: TipsLook): Art {
       case 'ios26':
       case 'ios27': {
         // A clear glass bulb, the ground's yellow showing through its top,
-        // on a stack of brass rings.
+        // on a stack of brass rings. Geometry measured off Apple's icon: a
+        // round globe that keeps its curve to 44 degrees below the equator,
+        // then a short, wide neck straight into the base.
         const muted = look === 'ios27'
-        const bulb = bulbPath({ centreY: 0.37, radius: 0.25, leave: 30, neckY: 0.775, neckHalf: 0.1, controlHalf: 0.115, controlY: 0.66 })
+        const bulb = bulbPath({ centreY: 0.35, radius: 0.246, leave: 44, neckY: 0.63, neckHalf: 0.132, controlHalf: 0.1455, controlY: 0.5755 })
         const fill = tileLinear(k, [
           [muted ? hex(0xfae666) : hex(0xfdd545), 0.1],
           [muted ? hex(0xfffdee) : hex(0xfce9ab), 0.55],
@@ -489,10 +496,10 @@ function tipsArt(look: TipsLook): Art {
         return (
           path(bulb, fill) +
           stroke(bulb, tileLinear(k, [white, whiteA(0.35)]), 1.2) +
-          filament(0.47, 0.09, 0.7, whiteA(muted ? 0.75 : 0.6)) +
-          band(0.8, 0.095, 0.03, muted ? hex(0xa38b3d) : hex(0xd9b23c)) +
-          band(0.835, 0.085, 0.03, muted ? hex(0x8e7632) : hex(0xc49a2a)) +
-          band(0.87, 0.06, 0.03, muted ? hex(0x715610) : hex(0xb48b1e))
+          filament(0.45, 0.104, 0.625, whiteA(muted ? 0.88 : 0.8), 0.042, 0.042) +
+          band(0.655, 0.135, 0.042, muted ? hex(0xa38b3d) : hex(0xd9b23c)) +
+          band(0.7, 0.128, 0.042, muted ? hex(0x8e7632) : hex(0xc49a2a)) +
+          band(0.745, 0.112, 0.042, muted ? hex(0x715610) : hex(0xb48b1e))
         )
       }
     }
@@ -581,8 +588,10 @@ const watchSpecs: Record<WatchLook, WatchSpec> = {
     caseBottom: 0x8e8e8e,
     crown: [0.215, 0.42],
     crownSize: 0.065,
-    band: ubox(0.21, 0.12, 0.85, 0.88),
-    bandWidth: 0.05,
+    // Measured off Apple's icon: the loop is centred on the tile and its
+    // strap is thin, not the fat tube a 0.05 stroke drew.
+    band: ubox(0.169, 0.14, 0.835, 0.862),
+    bandWidth: 0.038,
     lugs: false,
   },
   glass27: {
@@ -592,8 +601,8 @@ const watchSpecs: Record<WatchLook, WatchSpec> = {
     caseBottom: 0x8e8e8e,
     crown: [0.215, 0.42],
     crownSize: 0.065,
-    band: ubox(0.21, 0.12, 0.85, 0.88),
-    bandWidth: 0.05,
+    band: ubox(0.169, 0.14, 0.835, 0.862),
+    bandWidth: 0.038,
     lugs: false,
   },
 }
@@ -770,12 +779,12 @@ function findMyArt(look: FindMyLook): Art {
     out += circle(50, 50, 52, linear(k, [hex(p.zone[0]), hex(p.zone[1])]))
     out += circleStroke(50, 50, 52, glass ? 1.4 : 1.2, hex(p.zoneEdge))
     out += path(
-      beamPath(p.radius - 0.004, 25),
+      beamPath(p.radius - 0.004, 29),
       frameLinear(k, p.beam.map((c) => hex(c, look === 'ios27' ? 0.85 : 1)), 0, 0, 0, 50),
     )
-    out += circle(50, 50, 21, hex(p.halo))
-    out += circle(50, 50, 14.5, linear(k, [hex(p.dot[0]), hex(p.dot[1])]))
-    if (glass) out += ring(50, 50, 14.5, 0.8, frameLinear(k, [whiteA(0.8), whiteA(0)], 50, 42.75, 50, 50))
+    out += circle(50, 50, 22.5, hex(p.halo))
+    out += circle(50, 50, 16.5, linear(k, [hex(p.dot[0]), hex(p.dot[1])]))
+    if (glass) out += ring(50, 50, 16.5, 0.8, frameLinear(k, [whiteA(0.8), whiteA(0)], 50, 41.75, 50, 50))
     return out
   }
 }
@@ -827,14 +836,14 @@ function magnifierCross(ink: string, weightFraction: number, reach: number): str
 function magnifierArt(look: { plus: number } | { rim: number }): Art {
   return (k) => {
     if ('plus' in look) {
-      return magnifierHandle(0.056, () => white) + circleStroke(LX, LY, 48, 4, white) + magnifierCross(hex(look.plus), 0.042, 0.24)
+      return magnifierHandle(0.056, () => white) + circleStroke(LX, LY, 48, 3.6, white) + magnifierCross(hex(look.plus), 0.028, 0.25)
     }
     return (
       // topLeading -> bottomTrailing over the capsule's own frame (it turns
       // with the capsule).
-      magnifierHandle(0.048, (cx, cy, w, h) => frameLinear(k, [white, hex(0x9a9a9a)], cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)) +
+      magnifierHandle(0.055, (cx, cy, w, h) => frameLinear(k, [white, hex(0x9a9a9a)], cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2)) +
       circle(LX, LY, 48, radial(k, [hex(0x5a5638), hex(0x2e2c1e)], [0.4, 0.35], 0.26 / 0.48)) +
-      magnifierCross(hex(0xf5cf2a, 0.9), 0.022, 0.22) +
+      magnifierCross(hex(0xf5cf2a, 0.9), 0.016, 0.246) +
       circleStroke(LX, LY, 49, look.rim * 100, frameLinear(k, [white, hex(0xb4b4b4)], LX, LY - 24.5, LX, LY + 24.5))
     )
   }
@@ -991,8 +1000,8 @@ export const extra: HomeAppDef[] = [
     designs: [
       flat(2020, 0x1a1a1b, magnifierArt({ plus: 0xffd800 })),
       design(2024, 0x303030, 0x151515, magnifierArt({ plus: 0xffda00 })),
-      design(2025, 0x303030, 0x141414, magnifierArt({ rim: 0.03 })),
-      design(2026, 0x232323, 0x101010, magnifierArt({ rim: 0.036 })),
+      design(2025, 0x303030, 0x141414, magnifierArt({ rim: 0.034 })),
+      design(2026, 0x232323, 0x101010, magnifierArt({ rim: 0.038 })),
     ],
   },
 

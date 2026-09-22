@@ -82,8 +82,8 @@ extension HomeApp {
         HomeApp("Magnifier", designs: [
             flat(2020, 0x1A1A1B, art { edge in ExtraMagnifierArt(edge: edge, look: .flat(plus: hex(0xFFD800))) }),
             design(2024, 0x303030, 0x151515, art { edge in ExtraMagnifierArt(edge: edge, look: .flat(plus: hex(0xFFDA00))) }),
-            design(2025, 0x303030, 0x141414, art { edge in ExtraMagnifierArt(edge: edge, look: .glass(rim: 0.030)) }),
-            design(2026, 0x232323, 0x101010, art { edge in ExtraMagnifierArt(edge: edge, look: .glass(rim: 0.036)) }),
+            design(2025, 0x303030, 0x141414, art { edge in ExtraMagnifierArt(edge: edge, look: .glass(rim: 0.034)) }),
+            design(2026, 0x232323, 0x101010, art { edge in ExtraMagnifierArt(edge: edge, look: .glass(rim: 0.038)) }),
         ]),
 
         // Activity's three rings: Move, Exercise, Stand. 8.2-17 flat black |
@@ -237,9 +237,11 @@ private struct ExtraCameraShape: Shape {
     /// iOS 18: a wider gap between body and hood.
     static let ios18 = ExtraCameraShape(box: extraBox(0.164, 0.279, 0.633, 0.721), boxRadius: 0.08,
                                         hood: (0.676, 0.836, 0.086, 0.218, 0.04), centreY: 0.5)
-    /// iOS 26-27: a taller body and a shorter, rounder hood.
+    /// iOS 26-27: a taller body and a slim wedge of a hood all but touching
+    /// it. Fitted to Apple's icon, whose hood is half 0.092 high at x 0.67
+    /// and 0.204 at x 0.80 (the old blunt trapezoid was 0.076 and 0.173).
     static let ios26 = ExtraCameraShape(box: extraBox(0.148, 0.258, 0.652, 0.738), boxRadius: 0.085,
-                                        hood: (0.682, 0.859, 0.119, 0.195, 0.045), centreY: 0.5)
+                                        hood: (0.660, 0.860, 0.085, 0.250, 0.040), centreY: 0.5)
 }
 
 private struct ExtraCameraArt: View {
@@ -283,8 +285,8 @@ private struct ExtraPodcastsArt: View {
                 ring(radius: 0.329, width: refined ? 0.044 : 0.042, gap: 20, centreY: 0.458, style: Color.white)
                 ring(radius: 0.212, width: refined ? 0.044 : 0.042, gap: 36, centreY: 0.458, style: Color.white)
                 head(y: 0.433, diameter: 0.167, fill: .white)
-                ExtraTaper(y0: 0.55, y1: refined ? 0.878 : 0.883, topHalf: refined ? 0.082 : 0.080,
-                           bottomHalf: refined ? 0.062 : 0.060, radius: refined ? 0.056 : 0.06)
+                ExtraTaper(y0: 0.55, y1: refined ? 0.878 : 0.883, topHalf: refined ? 0.090 : 0.088,
+                           bottomHalf: refined ? 0.056 : 0.054, radius: refined ? 0.056 : 0.06)
                     .fill(.white)
                     .frame(width: edge, height: edge)
             }
@@ -295,7 +297,7 @@ private struct ExtraPodcastsArt: View {
                 disc(diameter: deep ? 0.718 : 0.726, fill: deep ? hex(0xA55CD8, 0.55) : hex(0xC68DE5, 0.42))
                 disc(diameter: 0.454, fill: deep ? hex(0xC9A3E6, 0.72) : hex(0xD6AEEC, 0.5))
                 head(y: 0.447, diameter: 0.172, fill: deep ? hex(0xF4E8FD) : hex(0xFBF7FE))
-                ExtraGlassGlyph(shape: ExtraTaper(y0: 0.562, y1: 0.902, topHalf: 0.096, bottomHalf: 0.062, radius: 0.062),
+                ExtraGlassGlyph(shape: ExtraTaper(y0: 0.562, y1: 0.865, topHalf: 0.095, bottomHalf: 0.066, radius: 0.062),
                                 edge: edge, top: deep ? hex(0xF4E8FD) : hex(0xFCF9FF),
                                 bottom: deep ? hex(0xDCC6EE, 0.8) : hex(0xE4D7EE, 0.78),
                                 shade: hex(0x4A1B78, 0.35))
@@ -354,7 +356,7 @@ private struct ExtraActivityRings: View {
     private var width: Double {
         switch look {
         case .ios8, .ios18: return 0.094
-        case .ios26, .ios27: return 0.09
+        case .ios26, .ios27: return 0.086
         }
     }
 
@@ -480,8 +482,11 @@ private struct ExtraTipsArt: View {
             // A clear glass bulb, the ground's yellow showing through its top,
             // on a stack of brass rings.
             let muted = look == .ios27
-            let bulb = ExtraBulbShape(centreY: 0.37, radius: 0.25, leave: 30, neckY: 0.775, neckHalf: 0.10,
-                                      controlHalf: 0.115, controlY: 0.66)
+            // Measured off Apple's icon: a round globe that keeps its curve
+            // to 44 degrees below the equator, then a short, wide neck
+            // straight into a base that ends at 0.77, not 0.89.
+            let bulb = ExtraBulbShape(centreY: 0.35, radius: 0.246, leave: 44, neckY: 0.63, neckHalf: 0.132,
+                                      controlHalf: 0.1455, controlY: 0.5755)
             ZStack {
                 bulb.fill(LinearGradient(stops: [.init(color: muted ? hex(0xFAE666) : hex(0xFDD545), location: 0.1),
                                                  .init(color: muted ? hex(0xFFFDEE) : hex(0xFCE9AB), location: 0.55),
@@ -491,22 +496,24 @@ private struct ExtraTipsArt: View {
                 bulb.stroke(LinearGradient(colors: [.white, .white.opacity(0.35)], startPoint: .top, endPoint: .bottom),
                             lineWidth: edge * 0.012)
                     .frame(width: edge, height: edge)
-                filament(barY: 0.47, barHalf: 0.09, stemBottom: 0.70, ink: .white.opacity(muted ? 0.75 : 0.6))
-                band(y: 0.80, half: 0.095, height: 0.03, ink: muted ? hex(0xA38B3D) : hex(0xD9B23C))
-                band(y: 0.835, half: 0.085, height: 0.03, ink: muted ? hex(0x8E7632) : hex(0xC49A2A))
-                band(y: 0.87, half: 0.06, height: 0.03, ink: muted ? hex(0x715610) : hex(0xB48B1E))
+                filament(barY: 0.45, barHalf: 0.104, stemBottom: 0.625, ink: .white.opacity(muted ? 0.88 : 0.8),
+                         barH: 0.042, stemW: 0.042)
+                band(y: 0.655, half: 0.135, height: 0.042, ink: muted ? hex(0xA38B3D) : hex(0xD9B23C))
+                band(y: 0.70, half: 0.128, height: 0.042, ink: muted ? hex(0x8E7632) : hex(0xC49A2A))
+                band(y: 0.745, half: 0.112, height: 0.042, ink: muted ? hex(0x715610) : hex(0xB48B1E))
             }
         }
     }
 
     /// The T-shaped filament.
-    private func filament(barY: Double, barHalf: Double, stemBottom: Double, ink: Color) -> some View {
+    private func filament(barY: Double, barHalf: Double, stemBottom: Double, ink: Color,
+                          barH: Double = 0.028, stemW: Double = 0.034) -> some View {
         ZStack {
             Capsule().fill(ink)
-                .frame(width: edge * barHalf * 2, height: edge * 0.028)
+                .frame(width: edge * barHalf * 2, height: edge * barH)
                 .offset(y: edge * (barY - 0.5))
             Capsule().fill(ink)
-                .frame(width: edge * 0.034, height: edge * (stemBottom - barY))
+                .frame(width: edge * stemW, height: edge * (stemBottom - barY))
                 .offset(y: edge * ((barY + stemBottom) / 2 - 0.5))
         }
     }
@@ -564,9 +571,11 @@ private struct ExtraWatchArt: View {
                         crown: CGPoint(x: 0.268, y: 0.43), crownSize: 0.07, button: nil,
                         band: extraBox(0.235, 0.18, 0.785, 0.82), bandWidth: 0.032)
         case .glass26, .glass27:
+            // Measured off Apple's icon: the loop is centred on the tile and
+            // its strap is thin, not the fat tube a 0.05 stroke drew.
             return Spec(watchCase: extraBox(0.16, 0.27, 0.29, 0.73), caseRadius: 0.045, caseTop: 0xDADADA, caseBottom: 0x8E8E8E,
                         crown: CGPoint(x: 0.215, y: 0.42), crownSize: 0.065, button: nil,
-                        band: extraBox(0.21, 0.12, 0.85, 0.88), bandWidth: 0.05, lugs: false)
+                        band: extraBox(0.169, 0.14, 0.835, 0.862), bandWidth: 0.038, lugs: false)
         }
     }
 
@@ -752,18 +761,18 @@ private struct ExtraFindMyArt: View {
                 .frame(width: edge * 0.52, height: edge * 0.52)
             Circle().stroke(p.zoneEdge, lineWidth: edge * (glass ? 0.014 : 0.012))
                 .frame(width: edge * 0.52, height: edge * 0.52)
-            ExtraBeamShape(radius: p.radius - 0.004, halfAngle: 25)
+            ExtraBeamShape(radius: p.radius - 0.004, halfAngle: 29)
                 .fill(LinearGradient(colors: p.beam.map { hex($0, look == .ios27 ? 0.85 : 1) },
                                      startPoint: .top, endPoint: .center))
                 .frame(width: edge, height: edge)
-            Circle().fill(p.halo).frame(width: edge * 0.21, height: edge * 0.21)
+            Circle().fill(p.halo).frame(width: edge * 0.225, height: edge * 0.225)
             Circle()
                 .fill(LinearGradient(colors: [hex(p.dot.0), hex(p.dot.1)], startPoint: .top, endPoint: .bottom))
-                .frame(width: edge * 0.145, height: edge * 0.145)
+                .frame(width: edge * 0.165, height: edge * 0.165)
             if glass {
                 Circle().strokeBorder(LinearGradient(colors: [.white.opacity(0.8), .white.opacity(0)], startPoint: .top, endPoint: .center),
                                       lineWidth: edge * 0.008)
-                    .frame(width: edge * 0.145, height: edge * 0.145)
+                    .frame(width: edge * 0.165, height: edge * 0.165)
             }
         }
     }
@@ -835,19 +844,21 @@ private struct ExtraMagnifierArt: View {
             switch look {
             case .flat(let plus):
                 handle(fill: AnyShapeStyle(Color.white), width: 0.056)
-                Circle().stroke(.white, lineWidth: edge * 0.04)
+                Circle().stroke(.white, lineWidth: edge * 0.036)
                     .frame(width: edge * 0.48, height: edge * 0.48)
                     .offset(x: edge * (centre.x - 0.5), y: edge * (centre.y - 0.5))
-                cross(ink: plus, weight: 0.042, reach: 0.24)
+                // Apple draws a fine plus (0.016 of the edge on the glass
+                // icon), not the 0.042 slab this used to be.
+                cross(ink: plus, weight: 0.028, reach: 0.25)
             case .glass(let rim):
                 handle(fill: AnyShapeStyle(LinearGradient(colors: [.white, hex(0x9A9A9A)], startPoint: .topLeading, endPoint: .bottomTrailing)),
-                       width: 0.048)
+                       width: 0.055)
                 Circle()
                     .fill(RadialGradient(colors: [hex(0x5A5638), hex(0x2E2C1E)], center: .init(x: 0.4, y: 0.35),
                                          startRadius: 0, endRadius: edge * 0.26))
                     .frame(width: edge * 0.48, height: edge * 0.48)
                     .offset(x: edge * (centre.x - 0.5), y: edge * (centre.y - 0.5))
-                cross(ink: hex(0xF5CF2A, 0.9), weight: 0.022, reach: 0.22)
+                cross(ink: hex(0xF5CF2A, 0.9), weight: 0.016, reach: 0.246)
                 Circle().stroke(LinearGradient(colors: [.white, hex(0xB4B4B4)], startPoint: .top, endPoint: .bottom),
                                 lineWidth: edge * rim)
                     .frame(width: edge * 0.49, height: edge * 0.49)

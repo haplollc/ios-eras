@@ -83,21 +83,22 @@ extension HomeApp {
                                  numeralFont: { .system(size: $0 * 0.624, weight: .regular) }, numeralInk: hex(0x262626), numeralY: 0.60)
                     .frame(width: edge, height: edge)
             }),
-            // iOS 26: Liquid Glass; title-case weekday, a semibold numeral raised as glass.
+            // iOS 26: Liquid Glass; a big title-case weekday close under the top
+            // edge, a medium numeral raised as glass.
             design(2025, 0xFDFDFD, 0xEFEFEF, art { edge in                                                // sampled
                 PaperCalendarArt(page: .clear,
-                                 weekday: "Tue", weekdayFont: { .system(size: $0 * 0.20, weight: .semibold) },
-                                 weekdayInk: hex(0xFF393C), weekdayY: 0.22,
-                                 numeralFont: { .system(size: $0 * 0.624, weight: .semibold) }, numeralInk: hex(0x1E1E1E), numeralY: 0.61,
+                                 weekday: "Tue", weekdayFont: { .system(size: $0 * 0.23, weight: .semibold) },
+                                 weekdayInk: hex(0xFF393C), weekdayY: 0.13,
+                                 numeralFont: { .system(size: $0 * 0.624, weight: .medium) }, numeralInk: hex(0x1E1E1E), numeralY: 0.61,
                                  glass: true)
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: flatter white, the red softened, the numeral pure black.
             design(2026, 0xFEFEFE, 0xF7F7F7, art { edge in                                                // sampled
                 PaperCalendarArt(page: .clear,
-                                 weekday: "Tue", weekdayFont: { .system(size: $0 * 0.20, weight: .semibold) },
-                                 weekdayInk: hex(0xEB4B46), weekdayY: 0.222,
-                                 numeralFont: { .system(size: $0 * 0.62, weight: .semibold) }, numeralInk: .black, numeralY: 0.612,
+                                 weekday: "Tue", weekdayFont: { .system(size: $0 * 0.23, weight: .semibold) },
+                                 weekdayInk: hex(0xEB4B46), weekdayY: 0.132,
+                                 numeralFont: { .system(size: $0 * 0.62, weight: .medium) }, numeralInk: .black, numeralY: 0.612,
                                  glass: true)
                     .frame(width: edge, height: edge)
             }),
@@ -143,15 +144,15 @@ extension HomeApp {
             // iOS 26: Liquid Glass; a glassy band with a bright lip, big perforations, the rules inset with round ends.
             design(2025, 0xFAFAFA, 0xECECEC, art { edge in                                                // sampled
                 PaperFlatPad(band: [hex(0xFFDC3D), hex(0xFED52D), hex(0xFEDA32)], bandHeight: 0.25, lip: hex(0xFFE040),
-                             bandShadow: hex(0xC1BCA4, 0.6), dots: hex(0xC1BCA4), dotsY: 0.285, dotPitch: 0.0632, dotSize: 0.023, dotPhase: 0.051,
-                             rules: [0.50, 0.75], rule: hex(0xC1C1C1), ruleInset: 0.125, ruleWidth: 0.011)
+                             bandShadow: hex(0xC1BCA4, 0.6), dots: hex(0xC1BCA4), dotsY: 0.285, dotPitch: 0.049, dotSize: 0.026, dotPhase: 0.042,
+                             rules: [0.50, 0.75], rule: hex(0xC1C1C1), ruleInset: 0.118, ruleWidth: 0.016)
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: paler, less saturated yellow; a thinner shadow.
             design(2026, 0xF6F6F6, 0xECECEC, art { edge in                                                // sampled
                 PaperFlatPad(band: [hex(0xFFE362), hex(0xF8D652), hex(0xF8D24B)], bandHeight: 0.25, lip: hex(0xFCE070),
-                             bandShadow: hex(0xB9B9B9, 0.4), dots: hex(0xB9B9B9), dotsY: 0.285, dotPitch: 0.0632, dotSize: 0.023, dotPhase: 0.051,
-                             rules: [0.50, 0.75], rule: hex(0xC1C1C1), ruleInset: 0.125, ruleWidth: 0.011)
+                             bandShadow: hex(0xB9B9B9, 0.4), dots: hex(0xB9B9B9), dotsY: 0.285, dotPitch: 0.049, dotSize: 0.026, dotPhase: 0.042,
+                             rules: [0.50, 0.75], rule: hex(0xC1C1C1), ruleInset: 0.118, ruleWidth: 0.016)
                     .frame(width: edge, height: edge)
             }),
         ]),
@@ -179,22 +180,22 @@ extension HomeApp {
             // iOS 13-18: blue, red, orange bullseyes with a grey bar beside each.
             flat(2019, 0xFFFFFF, art { edge in                                                            // measured
                 PaperReminderRows(colours: [hex(0x007AFF), hex(0xFF3B30), hex(0xFF9500)], rows: [0.25, 0.50, 0.75],
-                                  markerX: 0.188, outer: 0.164, ring: 0.03, disc: 0.075,
-                                  bar: PaperBar(x0: 0.367, x1: 0.879, height: 0.02, ink: hex(0xCBCBCF)))
+                                  markerX: 0.207, outer: 0.17, ring: 0.025, disc: 0.105,
+                                  bar: PaperBar(x0: 0.383, x1: 0.861, height: 0.024, ink: hex(0xCBCBCF)))
                     .frame(width: edge, height: edge)
             }),
             // iOS 26: the markers become glass pins, a disc in a translucent halo.
             design(2025, 0xFFFFFF, 0xECECEC, art { edge in                                                // documented
                 PaperReminderRows(colours: [hex(0x2D7CF6), hex(0xFF3B30), hex(0xFF9F0A)], rows: [0.25, 0.50, 0.75],
-                                  markerX: 0.207, outer: 0.165, ring: 0, disc: 0.095, style: .glassPin,
-                                  bar: PaperBar(x0: 0.35, x1: 0.83, height: 0.022, ink: hex(0xC2C2C2)))
+                                  markerX: 0.193, outer: 0.172, ring: 0, disc: 0.108, style: .glassPin,
+                                  bar: PaperBar(x0: 0.37, x1: 0.875, height: 0.021, ink: hex(0xC2C2C2)))
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: solid coloured rings round a pale tinted centre, shadows deepened.
             design(2026, 0xFEFEFE, 0xEBEBEB, art { edge in                                                // documented
                 PaperReminderRows(colours: [hex(0x2D7CF6), hex(0xE9463F), hex(0xF29A2E)], rows: [0.25, 0.50, 0.75],
-                                  markerX: 0.203, outer: 0.17, ring: 0.04, disc: 0, style: .softRing,
-                                  bar: PaperBar(x0: 0.371, x1: 0.875, height: 0.022, ink: hex(0xC1C1C1)))
+                                  markerX: 0.198, outer: 0.178, ring: 0.046, disc: 0, style: .softRing,
+                                  bar: PaperBar(x0: 0.375, x1: 0.875, height: 0.022, ink: hex(0xC1C1C1)))
                     .frame(width: edge, height: edge)
             }),
         ]),
@@ -231,14 +232,14 @@ extension HomeApp {
             }),
             // iOS 26: Liquid Glass; a white glass gear of 36 teeth, a grey gear seen through its windows.
             design(2025, 0xA7A7AD, 0x5F5F63, art { edge in                                                // measured
-                PaperGlassGears(frontAlpha: 0.94, back: hex(0xE2E2E6, 0.62), backRadius: 0.25, backHole: 0.76, backTeeth: 26,
-                                ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777C))
+                PaperGlassGears(frontAlpha: 0.94, back: hex(0xE2E2E6, 0.70), backRadius: 0.25, backHole: 0.76, backTeeth: 26,
+                                teeth: 40, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777C))
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: flatter grey; the front gear thicker and more translucent, the back gear smaller.
             design(2026, 0x9C9C9F, 0x78787D, art { edge in                                                // measured
-                PaperGlassGears(frontAlpha: 0.80, back: hex(0xE6E6EA, 0.55), backRadius: 0.23, backHole: 0.70, backTeeth: 22,
-                                ringHole: 0.72, spokeWidth: 0.07, hubRadius: 0.06, hole: hex(0x78787D))
+                PaperGlassGears(frontAlpha: 0.80, back: hex(0xE6E6EA, 0.62), backRadius: 0.23, backHole: 0.70, backTeeth: 22,
+                                teeth: 34, depth: 0.155, ringHole: 0.72, spokeWidth: 0.07, hubRadius: 0.06, hole: hex(0x78787D))
                     .frame(width: edge, height: edge)
             }),
         ]),
@@ -348,15 +349,15 @@ extension HomeApp {
             // iOS 26: Liquid Glass; the line a raised white tube, the marker a cyan glass sphere.
             design(2025, 0x313131, 0x101010, art { edge in                                                // measured
                 PaperStocksChart(grid: [0.18, 0.40, 0.60, 0.80], gridInk: hex(0x4C4C4C), gridWidth: 0.01,
-                                 points: PaperStocksChart.ios26, fill: 0.10, lineWidth: 0.04, lineInk: hex(0xF4F4F4),
-                                 barX: 0.604, barWidth: 0.028, barInk: hex(0x29B6F6), peakY: 0.35, marker: 0.12, markerInk: hex(0x4FD3FF), glass: true)
+                                 points: PaperStocksChart.ios26, fill: 0.10, lineWidth: 0.026, lineInk: hex(0xF4F4F4),
+                                 barX: 0.604, barWidth: 0.02, barInk: hex(0x29B6F6), peakY: 0.35, marker: 0.085, markerInk: hex(0x4FD3FF), glass: true)
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: brighter cyan; the sphere drawn as a ring.
             design(2026, 0x1F1F1F, 0x161616, art { edge in                                                // documented (tentative)
                 PaperStocksChart(grid: [0.18, 0.40, 0.60, 0.80], gridInk: hex(0x3E3E3E), gridWidth: 0.01,
-                                 points: PaperStocksChart.ios26, fill: 0.12, lineWidth: 0.04, lineInk: hex(0xF4F4F4),
-                                 barX: 0.604, barWidth: 0.028, barInk: hex(0x5FE0FF), peakY: 0.35, marker: 0.17, markerInk: hex(0x5FE0FF), ring: true, glass: true)
+                                 points: PaperStocksChart.ios26, fill: 0.12, lineWidth: 0.026, lineInk: hex(0xF4F4F4),
+                                 barX: 0.604, barWidth: 0.02, barInk: hex(0x5FE0FF), peakY: 0.35, marker: 0.095, markerInk: hex(0x5FE0FF), ring: true, glass: true)
                     .frame(width: edge, height: edge)
             }),
         ]),
@@ -409,14 +410,14 @@ extension HomeApp {
             // iOS 26: Liquid Glass; big bold letters hugging a long crosshair, the ring drawn in, a glass marker.
             design(2025, 0x313131, 0x141414, art { edge in                                               // measured
                 PaperDialCompass(dial: .ios26, majorInk: hex(0xF6F6F6), minorInk: hex(0x737373),
-                                 letters: .white, letterFont: { .system(size: $0 * 0.17, weight: .semibold) },
+                                 letters: .white, letterFont: { .system(size: $0 * 0.152, weight: .medium) },
                                  disc: nil, cross: hex(0x737373), marker: hex(0xFF464B), glass: true)
                     .frame(width: edge, height: edge)
             }),
             // iOS 27: the dial becomes a raised glass disc with a bright rim; the ticks move inside it.
             design(2026, 0x232323, 0x0F0F0F, art { edge in                                               // measured (tentative per Logopedia)
                 PaperDialCompass(dial: .ios27, majorInk: .white, minorInk: hex(0x787878),
-                                 letters: .white, letterFont: { .system(size: $0 * 0.155, weight: .semibold) },
+                                 letters: .white, letterFont: { .system(size: $0 * 0.142, weight: .medium) },
                                  disc: nil, cross: hex(0x777777), marker: hex(0xEA534A), glass: true, bezel: true)
                     .frame(width: edge, height: edge)
             }),
@@ -581,9 +582,20 @@ private struct PaperTriangle: Shape {
     }
 }
 
-/// A gear with square, pointed or rounded teeth, optionally hollow.
+/// A gear with square, cog or rounded teeth, optionally hollow.
+///
+/// Apple's gears - the skeuomorphic Settings wheel and the iOS 26/27 glass
+/// one alike - have BLUNT teeth: a flat or softly rounded crest, a flat
+/// valley and short flanks, never the needle points a raw zigzag gives. So
+/// `cog` and `rounded` shape the radius with a normalised soft square wave
+/// of the tooth angle, `k` setting how square the crest is (small k = a
+/// machined cog, larger k = the rounded fingers of the glass gear).
 private struct PaperGearShape: Shape {
-    enum Profile { case square, pointed, rounded }
+    enum Profile {
+        case square, cog, rounded
+
+        var k: Double { self == .rounded ? 0.55 : 0.30 }
+    }
 
     var teeth: Int
     /// Tooth height as a share of the outer radius.
@@ -602,17 +614,18 @@ private struct PaperGearShape: Shape {
         func point(_ angle: Double, _ radius: Double) -> CGPoint {
             CGPoint(x: centre.x + cos(angle) * radius, y: centre.y + sin(angle) * radius)
         }
-        let perTooth = profile == .rounded ? 8 : (profile == .pointed ? 2 : 4)
+        let perTooth = profile == .square ? 4 : 12
         let steps = teeth * perTooth
+        let k = profile.k
+        let norm = (1 + k * k).squareRoot()
         for step in 0..<steps {
             let angle = Double(step) / Double(steps) * 2 * .pi
             let radius: Double
             switch profile {
             case .square: radius = step % 4 < 2 ? outer : inner
-            case .pointed: radius = step % 2 == 0 ? outer : inner
-            case .rounded:
-                let wave = 0.5 + 0.5 * cos(Double(teeth) * angle)
-                radius = inner + (outer - inner) * pow(wave, 0.6)
+            case .cog, .rounded:
+                let u = cos(Double(teeth) * angle)
+                radius = inner + (outer - inner) * (0.5 + 0.5 * (u * norm) / (u * u + k * k).squareRoot())
             }
             let p = point(angle, radius)
             if step == 0 { path.move(to: p) } else { path.addLine(to: p) }
@@ -849,7 +862,7 @@ private struct PaperReminderCard: View {
                 PaperLines(xs: [0.395, 0.425], y0: 0.075, y1: 0.925).stroke(hex(0xE57373), lineWidth: max(0.5, s * 0.008))
                 ForEach(Array([(0.23, 0.82), (0.50, 0.72), (0.77, 0.82)].enumerated()), id: \.offset) { _, row in
                     Image(systemName: "checkmark")
-                        .font(.system(size: s * 0.13, weight: .heavy))
+                        .font(.system(size: s * 0.13, weight: .semibold))
                         .foregroundStyle(hex(0x1A1A1A))
                         .position(x: s * 0.245, y: s * row.0)
                     RoundedRectangle(cornerRadius: s * 0.008).fill(hex(0xB1B1B1))
@@ -900,7 +913,7 @@ private struct PaperGearPlateStyle {
     static let os1 = PaperGearPlateStyle(
         dots: hex(0x1E1E20, 0.8), dotPitch: 0.042, dotSize: 0.022, stagger: false,
         silver: [hex(0xF7F8F9), hex(0xC6C7C9), hex(0x8C8D90)], rim: hex(0x2A2A2C),
-        profile: .pointed, teeth: 22, depth: 0.20, x: 0.49, y: 0.64, radius: 0.45, window: 0.66,
+        profile: .cog, teeth: 22, depth: 0.18, x: 0.49, y: 0.64, radius: 0.45, window: 0.66,
         spokes: [-74, 0, -138], spokeWidth: 0.032, hub: .dark, hubRadius: 0.175,
         smalls: [(0.13, 0.975), (0.84, 0.975)], smallRadius: 0.28, smallFace: [hex(0xB8B9BB), hex(0x88898B)],
         frame: [hex(0xF2F4F8), hex(0xB6B9BE), hex(0x8A8B8E)], frameWidth: 0.05)
@@ -909,7 +922,7 @@ private struct PaperGearPlateStyle {
     static let ios4 = PaperGearPlateStyle(
         dots: hex(0x2E2E30, 0.9), dotPitch: 0.036, dotSize: 0.02, stagger: false,
         silver: [hex(0xFAFAFA), hex(0xCDCDCF), hex(0x929294)], rim: hex(0x3A3A3C),
-        profile: .pointed, teeth: 20, depth: 0.25, x: 0.49, y: 0.65, radius: 0.46, window: 0.65,
+        profile: .cog, teeth: 20, depth: 0.21, x: 0.49, y: 0.65, radius: 0.46, window: 0.65,
         spokes: [-74, 2, -144], spokeWidth: 0.030, hub: .silver, hubRadius: 0.17,
         smalls: [(0.10, 0.975), (0.87, 0.975)], smallRadius: 0.28, smallFace: [hex(0xC4C4C6), hex(0x8E8E90)],
         frame: [hex(0xF6F6F6), hex(0xC8C8CA), hex(0x9A9A9C)], frameWidth: 0.038)
@@ -1045,7 +1058,7 @@ private struct PaperNestedGear: View {
     }
 }
 
-/// The iOS 26-27 Settings: a white glass gear (36 rounded teeth, a thin
+/// The iOS 26-27 Settings: a white glass gear (blunt rounded teeth, a thin
 /// rim, three spokes, a hub) over a smaller grey gear seen through its windows.
 private struct PaperGlassGears: View {
     var frontAlpha: Double
@@ -1054,7 +1067,10 @@ private struct PaperGlassGears: View {
     var backRadius: Double
     var backHole: Double
     var backTeeth: Int
-    /// The front ring's hole as a share of its 0.80 diameter.
+    /// The front wheel's teeth and tooth height (share of its tip radius).
+    var teeth: Int
+    var depth: Double
+    /// The front ring's hole as a share of its 0.83 diameter.
     var ringHole: Double
     var spokeWidth: Double
     var hubRadius: Double
@@ -1065,18 +1081,20 @@ private struct PaperGlassGears: View {
             let s = min(geo.size.width, geo.size.height)
             let glass = LinearGradient(colors: [.white, hex(0xF1F1F4), hex(0xDCDCE0)], startPoint: .topLeading, endPoint: .bottomTrailing)
             ZStack {
-                PaperGearShape(teeth: backTeeth, depth: 0.22, profile: .rounded, hole: backHole)
+                // The second gear sits up and to the right, so its teeth show
+                // through the big gear's hole in that quadrant, as Apple's do.
+                PaperGearShape(teeth: backTeeth, depth: 0.16, profile: .rounded, hole: backHole)
                     .fill(back, style: FillStyle(eoFill: true))
                     .frame(width: s * backRadius * 2, height: s * backRadius * 2)
-                    .offset(x: -s * 0.015, y: s * 0.005)
+                    .offset(x: s * 0.06, y: -s * 0.07)
                 ZStack {
-                    PaperGearShape(teeth: 36, depth: 0.15, profile: .rounded, hole: ringHole)
+                    PaperGearShape(teeth: teeth, depth: depth, profile: .rounded, hole: ringHole)
                         .fill(glass, style: FillStyle(eoFill: true))
-                        .frame(width: s * 0.80, height: s * 0.80)
+                        .frame(width: s * 0.83, height: s * 0.83)
                     ForEach(0..<3, id: \.self) { index in
                         Capsule().fill(glass)
-                            .frame(width: s * 0.32, height: s * spokeWidth)
-                            .offset(x: s * 0.16)
+                            .frame(width: s * 0.34, height: s * spokeWidth)
+                            .offset(x: s * 0.17)
                             .rotationEffect(.degrees(Double(index) * 120))
                     }
                     Circle().fill(glass).frame(width: s * hubRadius * 2, height: s * hubRadius * 2)
@@ -1240,11 +1258,11 @@ private struct PaperCalcLayout {
     static let flat = PaperCalcLayout(bodyWidth: 0.52, bodyHeight: 0.76, bodyRadius: 0.08, displayWidth: 0.42, displayHeight: 0.17,
                                       displayY: 0.255, columns: [0.34, 0.50, 0.66], rows: [0.46, 0.61, 0.76], key: 0.11)
     /// iOS 26.
-    static let glass = PaperCalcLayout(bodyWidth: 0.50, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.40, displayHeight: 0.15,
-                                       displayY: 0.255, columns: [0.35, 0.50, 0.65], rows: [0.48, 0.61, 0.74], key: 0.095)
+    static let glass = PaperCalcLayout(bodyWidth: 0.50, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.40, displayHeight: 0.175,
+                                       displayY: 0.26, columns: [0.35, 0.50, 0.65], rows: [0.485, 0.615, 0.745], key: 0.10)
     /// iOS 27.
-    static let glass27 = PaperCalcLayout(bodyWidth: 0.50, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.40, displayHeight: 0.16,
-                                         displayY: 0.255, columns: [0.35, 0.50, 0.65], rows: [0.47, 0.61, 0.75], key: 0.10)
+    static let glass27 = PaperCalcLayout(bodyWidth: 0.50, bodyHeight: 0.75, bodyRadius: 0.075, displayWidth: 0.40, displayHeight: 0.175,
+                                         displayY: 0.26, columns: [0.35, 0.50, 0.65], rows: [0.485, 0.615, 0.745], key: 0.10)
 }
 
 /// The iOS 11-27 Calculator: a whole calculator drawn flat, glassy from iOS 26.
@@ -1500,9 +1518,9 @@ private struct PaperDialLayout {
     static let ios11 = PaperDialLayout(tickIn: 0.365, tickOut: 0.44, majorWidth: 0.015, minorWidth: 0.010,
                                        letterX: 0.19, letterY: 0.19, crossReach: 0.18, crossWidth: 0.011)
     static let ios26 = PaperDialLayout(tickIn: 0.34, tickOut: 0.40, majorWidth: 0.016, minorWidth: 0.011,
-                                       letterX: 0.10, letterY: 0.13, crossReach: 0.25, crossWidth: 0.012)
+                                       letterX: 0.118, letterY: 0.142, crossReach: 0.25, crossWidth: 0.011)
     static let ios27 = PaperDialLayout(tickIn: 0.30, tickOut: 0.36, majorWidth: 0.015, minorWidth: 0.010,
-                                       letterX: 0.10, letterY: 0.125, crossReach: 0.24, crossWidth: 0.011)
+                                       letterX: 0.115, letterY: 0.138, crossReach: 0.24, crossWidth: 0.010)
 }
 
 /// The iOS 7-27 Compass: 48 ticks (white majors every 30 degrees, aligned

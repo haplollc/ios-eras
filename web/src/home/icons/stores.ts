@@ -650,14 +650,17 @@ function contactsCouple(k: Kit): string {
   )
 }
 
-/** StoresContactRing (iOS 13-18): one generic person in a ring, the
- *  shoulders cut by the ring's inside. */
+/** StoresContactRing (iOS 13-18): one generic person in a ring. Apple's
+ *  shoulders are a wide circular cap that runs INTO the ring and merges with
+ *  it, not a rounded box floating clear of it, so the body is a disc of 0.567
+ *  centred low and clipped by the ring's outer edge (0.31), and the head is a
+ *  0.218 circle - both measured off the shipping iOS 18 icon. */
 function contactRing(k: Kit, strokeWidth: number): string {
   const ink = hex(0xa9a29a)
-  const disc = clip(k, circle(43.5, 50, 200 * (0.315 - strokeWidth * 0.5), '#fff'))
+  const disc = clip(k, circle(43.4, 50, 62, '#fff'))
   return (
-    ring(43.5, 50, 63, strokeWidth * 100, ink) +
-    path(`${ellipsePath(43.5, 44, 20.5, 20.5)} ${rrectPath(43.5, 82.5, 46, 40, 17, true)}`, ink, `clip-path="${disc}"`) +
+    ring(43.4, 50, 62, strokeWidth * 100, ink) +
+    path(`${ellipsePath(43.4, 43.2, 21.8, 21.8)} ${ellipsePath(43.4, 88.3, 56.7, 56.7)}`, ink, `clip-path="${disc}"`) +
     tabColumn({ width: 0.115, colours: tabsLater })
   )
 }
@@ -1030,32 +1033,37 @@ function chevronsD(offset: number, pitch: number, stripe: number, point: number,
 /** StoresTVSet (iOS 10.2): a white-outlined flat screen with a green-to-blue
  *  picture, on a stand bar. */
 function tvSet(k: Kit): string {
-  const [w, h, cy] = [70, 43, 46.1]
-  const line = 2.4
+  // Measured off the shipping iOS 10.2 icon: the bezel is a heavy 3.3 line
+  // (ours was 2.4, a third too light), the set 71.2 x 44.2 and the stand bar
+  // 39.8 x 4.1 - the picture inside stays the same 64.6 wide.
+  const [w, h, cy] = [71.2, 44.2, 46.1]
+  const line = 3.3
   return (
     rrect(50, cy, w, h, 2, spanLinear(k, [hex(0x4fe9b8), hex(0x51e3cb), hex(0x38aad3)], 50 - w / 2, cy - h / 2, 50 + w / 2, cy + h / 2), '', true) +
     path(rrectPath(50, cy, w - line, h - line, 2 - line / 2, true), 'none', `stroke="#fff" stroke-width="${line}"`) +
-    rrect(50, 73.05, 38.6, 3.1, 0.6, '#fff', '', true)
+    rrect(50, 73.05, 39.8, 4.1, 0.6, '#fff', '', true)
   )
 }
 
 type WordmarkLook = 'white' | 'iridescent' | 'muted'
 
-// The wordmark's layout: HStack(alignment: .lastTextBaseline, spacing: 0.02)
-// of the apple.logo symbol at 0.405 medium and "tv" at 0.535 semibold,
-// kerned -0.012, raised 0.015. SwiftUI's text and symbol metrics are not
-// available here, so the ink boxes are measured off the iOS render (2019):
-// the apple x 12.2-43.3, y 33.9-72.2 (it hangs below the baseline); the t
-// from x 48.3, the v to x 91.7, baseline 68.4. `frame` is the HStack's
-// frame, which both 26.1+ gradients span: symbol margins and the text's
-// ascender/descender (0.9668 / 0.2109 of 53.5) round the ink.
+// The wordmark's layout: HStack(alignment: .lastTextBaseline, spacing: 0) of
+// the apple.logo symbol at 0.413 medium, lifted 0.033 so it sits ON the
+// baseline, and "tv" at 0.535 semibold, kerned -0.012; the pair raised
+// 0.037 and nudged 0.011 left. SwiftUI's text and symbol metrics are not
+// available here, so the ink boxes are fitted to Apple's own artwork
+// (measured off the shipping Apple TV icon, as fractions of the tile):
+// the apple x 0.119-0.423 y 0.271-0.653, the t x 0.455-0.602 y 0.313, the v
+// to x 0.875 - all three sharing one baseline at 0.653. `frame` is the
+// HStack's frame, which both 26.1+ gradients span: symbol margins and the
+// text's ascender/descender (0.9668 / 0.2109 of 53.5) round the ink.
 // The web's SF (Text proportions) sets "tv" about 3% wider than iOS's SF
 // Display at this size, with a tighter t-v gap, so size, squeeze and
 // spacing are fitted to the measured ink rather than taken from the Swift.
 const mark = {
-  apple: { x0: 12.22, x1: 43.33, y0: 33.89, y1: 72.22 },
-  tv: { x: 47.8, baseline: 68.4, size: 52.7, squeeze: 0.975, spacing: -0.1 },
-  frame: { left: 8.5, right: 91.5, top: 68.4 - 53.5 * 0.9668, bottom: 68.4 + 53.5 * 0.2109 },
+  apple: { x0: 12.22, x1: 43.33, y0: 27.67, y1: 66.73 },
+  tv: { x: 45.8, baseline: 66.2, size: 52.7, squeeze: 0.975, spacing: -0.1 },
+  frame: { left: 8.4, right: 89.4, top: 66.2 - 53.5 * 0.9668, bottom: 66.2 + 53.5 * 0.2109 },
 }
 
 /** The apple, fitted to the measured box. The stand-in (Phosphor's

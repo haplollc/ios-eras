@@ -21,8 +21,8 @@
 // - Swift line widths are `max(floor pt, edge * f)`. The art here is
 //   resolution independent, so the floor is read at a nominal 60 pt edge
 //   (see lineWidth()).
-// - phone.fill (SF Symbols) is the Phosphor phone glyph from kit.symbol(),
-//   fitted to the Swift's bounding box as `.resizable().scaledToFit()` does.
+// - The handset is a hand-drawn shape (DockHandsetShape), the same anchors
+//   in both files, so the two stay identical without an SF Symbol.
 
 import type { HomeAppDef, Kit, Stop } from './kit'
 import {
@@ -44,7 +44,6 @@ import {
   ring,
   rrectPath,
   shadow,
-  symbol,
   text,
   weight,
 } from './kit'
@@ -134,37 +133,63 @@ function stripes(period: number, colour: string, width: number): string {
 
 type HandsetLook = { kind: 'skeuomorphic'; heavy: boolean } | { kind: 'flat' } | { kind: 'glass'; tint: string }
 
-// Phosphor's phone-fill outline sits at x 32-232, y 24-224 of its 256 box;
-// kit.symbol() centres the 256 box and scales it by 1.18 * size / 256.
-const PHONE_BOX = { x: 32, y: 24, w: 200, h: 200 }
+// DockHandsetShape. Apple's handset is not a bar of one thickness: it is a
+// band whose centreline follows a single arc and whose walls taper to a thin
+// waist at the elbow and flare out again at the earpiece and the mouthpiece.
+// The arc below is fitted through the three points measured off the icon
+// (earpiece end, elbow, mouthpiece end) in the glyph's unit box, and
+// HANDSET is the outline as (degrees, radius) anchors round that centre.
+const HANDSET_CENTRE: [number, number] = [0.80762, 0.22189]
+const HANDSET_RADIUS = 0.64145
 
-/** phone.fill, `.resizable().scaledToFit()` into `b`. The Phosphor glyph
- *  has one weight (its handle is already fuller than SF's at any weight),
- *  so the Swift's .black / .regular / .medium all draw it as is. */
-function handsetGlyph(b: Box, fill: string): string {
-  const scale = Math.min(b.w / PHONE_BOX.w, b.h / PHONE_BOX.h)
-  const size = (scale * 256) / 1.18
-  const cx = b.cx - (PHONE_BOX.x + PHONE_BOX.w / 2 - 128) * scale
-  const cy = b.cy - (PHONE_BOX.y + PHONE_BOX.h / 2 - 128) * scale
-  return symbol('phone.fill', fill, size, cx, cy)
+/** One closed loop: down the OUTER edge from the earpiece to the mouthpiece,
+ *  round the mouthpiece's cap, back up the INNER edge (through the waist at
+ *  158-116 degrees, where the wall sits ~0.09 off the centreline against
+ *  ~0.17 at the flares), and round the earpiece's cap. */
+const HANDSET: Array<[number, number]> = [
+  [198, 0.6963], [192, 0.763], [186, 0.7993], [178, 0.8134], [170, 0.7993], [162, 0.7811],
+  [152, 0.7569], [142, 0.7408], [132, 0.7387], [122, 0.7428], [112, 0.7589], [102, 0.7791],
+  [94, 0.7892], [86, 0.7751], [78, 0.7206], [74, 0.6741],
+  [72.3, 0.6227],
+  [74, 0.5672], [78, 0.5248], [86, 0.4582], [94, 0.4218], [102, 0.434], [110, 0.4945],
+  [116, 0.543], [126, 0.5409], [138, 0.543], [150, 0.553], [158, 0.5591], [164, 0.5066],
+  [172, 0.4501], [178, 0.442], [186, 0.4844], [192, 0.5349], [198, 0.6075],
+  [200.3, 0.6519],
+]
+
+/** DockHandsetShape: the handset filling `b`, wound as one closed curve
+ *  (quadratics through the anchors' midpoints, as DockContinents does).
+ *  `weight` pushes every wall away from the centreline: 1 is Apple's
+ *  handset, and the chunkier iPhone OS 1-2 one is a little fuller. */
+function handsetPath(b: Box, weight: number): string {
+  const pts = HANDSET.map(([deg, r]): [number, number] => {
+    const a = (deg * Math.PI) / 180
+    const rr = HANDSET_RADIUS + (r - HANDSET_RADIUS) * weight
+    return [b.x0 + b.w * (HANDSET_CENTRE[0] + rr * Math.cos(a)), b.y0 + b.h * (HANDSET_CENTRE[1] + rr * Math.sin(a))]
+  })
+  const mid = (i: number, j: number) => P((pts[i][0] + pts[j][0]) / 2, (pts[i][1] + pts[j][1]) / 2)
+  const n = pts.length
+  let d = `M${mid(n - 1, 0)} `
+  for (let i = 0; i < n; i++) d += `Q${P(pts[i][0], pts[i][1])} ${mid(i, (i + 1) % n)} `
+  return d + 'Z'
 }
 
-/** DockHandset: earpiece top-left, mouthpiece bottom-right. `heavy` (the
- *  chunky iPhone OS 1-2 handset, SF weight .black) only picks the weight in
- *  the Swift; see handsetGlyph(). */
+/** DockHandset: earpiece top-left, mouthpiece bottom-right. `heavy` is the
+ *  chunky iPhone OS 1-2 handset; iPhone OS 3 slimmed it to Apple's weight. */
 function handset(k: Kit, b: Box, look: HandsetLook): string {
+  const d = handsetPath(b, look.kind === 'skeuomorphic' && look.heavy ? 1.16 : 1)
   switch (look.kind) {
     case 'skeuomorphic':
       return withFilter(
-        handsetGlyph(b, linear(k, ['#fff', hex(0xdcdcdc)], [0, 0], [1, 1])),
+        path(d, linear(k, ['#fff', hex(0xdcdcdc)], [0, 0], [1, 1])),
         shadow(k, 'rgba(0,0,0,0.35)', 1.2, 0, 1.4),
       )
     case 'flat':
-      return handsetGlyph(b, '#fff')
+      return path(d, '#fff')
     case 'glass':
       return (
-        place(handsetGlyph(b, fade(look.tint, 0.7)), { dy: 1.4 }) +
-        handsetGlyph(b, linear(k, ['#fff', hex(0xf1fef3), fade(look.tint, 0.95)]))
+        place(path(d, fade(look.tint, 0.7)), { dy: 1.4 }) +
+        path(d, linear(k, ['#fff', hex(0xf1fef3), fade(look.tint, 0.95)]))
       )
   }
 }
@@ -187,10 +212,13 @@ interface Bubble {
   tipY: number
 }
 
-/** iOS 7.0 - 18: bbox x 0.135-0.863, y 0.176-0.822. */
-const flatBubble: Bubble = { cx: 0.499, cy: 0.475, rx: 0.364, ry: 0.3, from: 127, to: 106, tipX: 0.26, tipY: 0.82 }
-/** iOS 26: the same body with a slightly softer, shorter tail. */
-const glassBubble: Bubble = { cx: 0.5, cy: 0.472, rx: 0.366, ry: 0.291, from: 127, to: 106, tipX: 0.27, tipY: 0.784 }
+/** iOS 7.0 - 18: bbox x 0.135-0.863, y 0.176-0.822. The tail is a narrow
+ *  nub: its roots are only 14 degrees apart on the ellipse (measured at
+ *  0.308, 0.733 and 0.387, 0.763), not the broad thumb a wider root draws. */
+const flatBubble: Bubble = { cx: 0.499, cy: 0.475, rx: 0.364, ry: 0.3, from: 122, to: 108, tipX: 0.264, tipY: 0.82 }
+/** iOS 26: a slightly narrower body, and a longer tail that leaves the
+ *  ellipse higher (measured root 0.185, 0.64) and sweeps further left. */
+const glassBubble: Bubble = { cx: 0.496, cy: 0.48, rx: 0.354, ry: 0.3, from: 148, to: 123, tipX: 0.187, tipY: 0.776 }
 
 function bubblePath(b: Bubble): string {
   const at = (deg: number): [number, number] => {
@@ -474,7 +502,8 @@ interface CompassOptions {
   longInner?: number
   shortInner?: number
   tickOuter?: number
-  /** Tick width, share of the tile. */
+  /** Tick width, share of the tile. Ticks run out to the disc's rim
+   *  (tickOuter ~1), which is where Apple's stop. */
   tickWidth: number
   roundTicks: boolean
   /** Degrees clockwise from north for the red tip. */
@@ -496,7 +525,7 @@ function compass(k: Kit, o: CompassOptions): string {
   let out = circle(50, 50, d, linear(k, o.face))
   if (glass) out += ring(50, 50, d, lineWidth(0.01, 0.5), 'rgba(255,255,255,0.45)')
   out += stroke(
-    tickRingPath(o.ticks ?? 72, o.longInner ?? 0.75, o.shortInner ?? 0.83, o.tickOuter ?? 0.92, r),
+    tickRingPath(o.ticks ?? 72, o.longInner ?? 0.75, o.shortInner ?? 0.83, o.tickOuter ?? 0.985, r),
     o.tickInk,
     lineWidth(o.tickWidth, 0.5),
     o.roundTicks ? 'stroke-linecap="round"' : '',
@@ -675,9 +704,12 @@ function notePath(g: NoteGeometry): string {
 }
 
 /** DockNote: the note filled in one style, with a round-joined stroke of
- *  the same style to soften its corners; `opacity` fades it as one layer. */
+ *  the same style to soften its corners; `opacity` fades it as one layer.
+ *  The stroke is kept narrow: a wide one rounds the corners nicely but also
+ *  grows the whole glyph by half its width, which reads as a bolder note
+ *  than Apple's (measured 11% heavier at 0.018). */
 function note(g: NoteGeometry, style: string, opacity = 1, dy = 0): string {
-  const markup = `<path d="${notePath(g)}" fill="${style}" stroke="${style}" stroke-width="${f(lineWidth(0.018, 0.5))}" stroke-linejoin="round"/>`
+  const markup = `<path d="${notePath(g)}" fill="${style}" stroke="${style}" stroke-width="${f(lineWidth(0.01, 0.4))}" stroke-linejoin="round"/>`
   if (opacity >= 1 && !dy) return markup
   return place(markup, { dy, opacity })
 }
@@ -818,13 +850,16 @@ export const dock: HomeAppDef[] = [
           white: '#fff',
         }),
       ),
-      // iOS 26: off-white glass tile, smaller lens (0.80), pale ticks, the
-      // needle back at 45 degrees.
+      // iOS 26: off-white glass tile, smaller lens (0.80), 48 pale ticks
+      // (24 long, 24 short, measured 7.5 degrees apart), the needle back at
+      // 45 degrees.
       design(2025, 0xffffff, 0xececec, (k) =>
         compass(k, {
           disc: 0.8,
           face: [hex(0x5abdf9), hex(0x1d74fd)],
+          ticks: 48,
           tickInk: hex(0xd6ecfe, 0.85),
+          shortInner: 0.8,
           tickWidth: 0.009,
           roundTicks: true,
           angle: 45,

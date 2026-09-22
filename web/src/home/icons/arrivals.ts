@@ -414,7 +414,7 @@ function newsN(k: Kit, x0: number, y0: number, size: number, top: string, bottom
   if (!glass) return ink
   // A pale glass sheen over the upper half of the letter; letter and sheen
   // are shadowed one by one (see eachLeaf).
-  const sheen = masked(down(k, [white(0.42), white(0)], y0, y0 + s / 2))
+  const sheen = masked(down(k, [white(0.3), white(0)], y0, y0 + s / 2))
   return eachLeaf(drop(k, fade(bottom, shade), s * 0.05, s * 0.05), [ink, sheen])
 }
 
@@ -575,8 +575,8 @@ const houseSpecs: Record<HouseLook, { apex: number; base: number; outer: number[
     outer: [0xffae06, 0xfe9c00],
     layers: [
       { halfWidth: 0.213, apex: 0.246, base: 0.734, colours: [0xfdb622, 0xfd8c00] },
-      { halfWidth: 0.133, apex: 0.344, base: 0.648, colours: [0xfdda62, 0xfeb41e] },
-      { halfWidth: 0.058, apex: 0.441, base: 0.574, colours: [0xfffdd6, 0xfef1a4] },
+      { halfWidth: 0.128, apex: 0.344, base: 0.648, colours: [0xfdda62, 0xfeb41e] },
+      { halfWidth: 0.078, apex: 0.441, base: 0.578, colours: [0xfffdd6, 0xfef1a4] },
     ],
   },
   deepGlass: {
@@ -585,8 +585,8 @@ const houseSpecs: Record<HouseLook, { apex: number; base: number; outer: number[
     outer: [0xff9100, 0xff7b00],
     layers: [
       { halfWidth: 0.213, apex: 0.246, base: 0.73, colours: [0xffb02f, 0xffa11b] },
-      { halfWidth: 0.133, apex: 0.344, base: 0.652, colours: [0xffd571, 0xffc55a] },
-      { halfWidth: 0.058, apex: 0.441, base: 0.576, colours: [0xfffbc3, 0xfffed5] },
+      { halfWidth: 0.128, apex: 0.344, base: 0.652, colours: [0xffd571, 0xffc55a] },
+      { halfWidth: 0.078, apex: 0.441, base: 0.58, colours: [0xfffbc3, 0xfffed5] },
     ],
   },
 }
@@ -740,14 +740,21 @@ const glassRuler: Art = (k) => {
  *  edge to the upper-right edge. */
 function diamondsArt(upper: string[], lower: string[], upperAlpha: number, glass: boolean, roundness = 0.2): Art {
   return (k) => {
-    const side = 49
+    // Measured off Apple's icons: each diamond is 0.58 of the tile across
+    // (0.65 on the glass icon) and about two thirds as tall, and the two
+    // barely overlap - the upper one sits left of centre, the lower right.
+    const side = glass ? 46 : 41
+    const squash = glass ? 0.66 : 0.655
+    const lift = glass ? 13 : 16.5
+    const shift = glass ? 2.5 : 2
     const h = side / 2
-    // Drawn centred on the origin, then turned 45 degrees, squashed to 79%
-    // and moved: bottom-leading becomes the left vertex.
+    // Drawn centred on the origin, then turned 45 degrees, squashed and
+    // moved: bottom-leading becomes the left vertex.
     // Leaves of one diamond; the alpha is on the paint so a shadow under a
     // translucent leaf shows through it, as in SwiftUI.
     const diamond = (colours: string[], from: [number, number], to: [number, number], dy: number, alpha: number) => {
-      const place = (leaf: string) => `<g transform="translate(50 ${n(50 + dy)}) scale(1 0.79) rotate(45)">${leaf}</g>`
+      const dx = dy > 0 ? shift : -shift
+      const place = (leaf: string) => `<g transform="translate(${n(50 + dx)} ${n(50 + dy)}) scale(1 ${squash}) rotate(45)">${leaf}</g>`
       const outline = rrectPath(0, 0, side, side, side * roundness, true)
       const leaves = [place(path(outline, lin(k, colours, from[0], from[1], to[0], to[1]), alpha < 1 ? `fill-opacity="${alpha}"` : ''))]
       if (glass) {
@@ -756,7 +763,7 @@ function diamondsArt(upper: string[], lower: string[], upperAlpha: number, glass
       }
       return leaves
     }
-    const leaves = [...diamond(lower, [0, h], [0, -h], 12.5, 1), ...diamond(upper, [-h, h], [h, -h], -12.5, upperAlpha)]
+    const leaves = [...diamond(lower, [0, h], [0, -h], lift, 1), ...diamond(upper, [-h, h], [h, -h], -lift, upperAlpha)]
     return glass ? eachLeaf(drop(k, black(0.3), 2.5, 2), leaves) : leaves.join('')
   }
 }
@@ -846,10 +853,11 @@ function freeformArt(o: FreeformSpec): Art {
     const round = 'stroke-linecap="round" stroke-linejoin="round"'
     let out = circle(10 + 29.25, 31 + 29.25, 58.5, down(k, o.circle, 31, 89.5))
     out += rrect(60, 40, 54, 54, o.squareRadius * 100, lin(k, o.square, 60, 13, 87, 67), o.squareAlpha < 1 ? `fill-opacity="${o.squareAlpha}"` : '', true)
-    if (o.glow !== undefined) out += path(scribblePath, 'none', stroke(hex(o.glow, 0.55), 10, round))
-    out += path(scribblePath, 'none', `${stroke(hex(o.stroke), 6.4, round)} ${o.highlight !== undefined ? drop(k, black(0.25), 1.5, 1.2) : ''}`)
+    if (o.glow !== undefined) out += path(scribblePath, 'none', stroke(hex(o.glow, 0.55), 8.8, round))
+    // Apple's stroke is 0.055 of the tile, not the 0.064 drawn here before.
+    out += path(scribblePath, 'none', `${stroke(hex(o.stroke), 5.5, round)} ${o.highlight !== undefined ? drop(k, black(0.25), 1.5, 1.2) : ''}`)
     if (o.highlight !== undefined) {
-      out += `<g transform="translate(0 -1.4)">${path(scribblePath, 'none', stroke(hex(o.highlight, 0.7), 1.2, round))}</g>`
+      out += `<g transform="translate(0 -1.2)">${path(scribblePath, 'none', stroke(hex(o.highlight, 0.7), 1.1, round))}</g>`
     }
     return out
   }
@@ -860,7 +868,7 @@ function freeformArt(o: FreeformSpec): Art {
 /** ArrivalsUpperWing: a tall petal whose top rises outward and whose tail
  *  hooks down to the seam (tile fractions x 100). */
 const upperWingPath =
-  'M16,20.5 Q16,15.5 21,15.5 L39,22.8 Q47.2,25.5 47.2,33 L47.2,62.5 C45,53 33,49 19,46.8 Q16,46.8 16,44 Z'
+  'M19,20.5 Q19,15.5 23.5,15.5 L39.8,22.8 Q47.2,25.5 47.2,33 L47.2,50 C45,49 34,45 21.7,43 Q19,43 19,40.5 Z'
 
 /** ArrivalsLowerWing: a squared top, a straight outer side and a round
  *  bottom that sweeps up to the seam. */
@@ -879,7 +887,7 @@ function butterflyArt(upperLeft: Pair, lowerLeft: Pair, upperRight: Pair, lowerR
       const flip = (leaf: string) => (mirror ? `<g transform="translate(100 0) scale(-1 1)">${leaf}</g>` : leaf)
       const leaves = [path(lowerWingPath, lin(k, lower.map((c) => hex(c)), 50, 53, 50, 84))]
       if (glass) leaves.push(path(lowerWingPath, 'none', rim()))
-      leaves.push(path(upperWingPath, lin(k, upper.map((c) => hex(c)), 16, 30, 47, 40), `fill-opacity="${alpha}"`))
+      leaves.push(path(upperWingPath, lin(k, upper.map((c) => hex(c)), 19, 30, 47, 40), `fill-opacity="${alpha}"`))
       if (glass) leaves.push(path(upperWingPath, 'none', `${rim()} stroke-opacity="${alpha}"`))
       return leaves.map(flip)
     }
@@ -973,19 +981,24 @@ function keyPath(o: KeySpec): string {
 /** iOS 18 Passwords: three flat keys fanned right, each cut out of the one
  *  behind by a white gap. */
 const fannedKeys: Art = (k) => {
+  // Measured off the iOS 18 icon: a 0.335 bow with a big hole, a slim 0.065
+  // blade offset well to its left, and a tight 0.135 fan so only a crescent
+  // of the two keys behind shows.
+  const bow = 0.335
+  const bowY = 0.3
   const key = (x: number, colours: Pair, bit: KeyBit) => {
-    const d = keyPath({ x, y: 0.335, bow: 0.37, hole: 0.09, holeLift: 0.22, blade: 0.095, bladeShift: -0.022, bottom: 0.875, bit, tip: 'slant' })
+    const d = keyPath({ x, y: bowY, bow, hole: 0.1, holeLift: 0.26, blade: 0.065, bladeShift: -0.05, bottom: 0.862, bit, tip: 'slant' })
     return (
-      path(d, 'none', stroke('#fff', 5, 'stroke-linejoin="round"')) +
-      path(d, lin(k, colours.map((c) => hex(c)), 50, 15, 50, 88)) +
+      path(d, 'none', stroke('#fff', 4, 'stroke-linejoin="round"')) +
+      path(d, lin(k, colours.map((c) => hex(c)), 50, 12, 50, 88)) +
       // The hole shows the white tile, not the key behind.
-      circle(x * 100, (0.335 - 0.37 * 0.22) * 100, 9, '#fff')
+      circle(x * 100, (bowY - bow * 0.26) * 100, 10, '#fff')
     )
   }
   return (
-    key(0.375, [0xffd94a, 0xffbe00], { kind: 'none' }) +
-    key(0.495, [0x4cd96c, 0x2ec351], { kind: 'none' }) +
-    key(0.615, [0x5cc6f8, 0x0079ff], { kind: 'chevrons', count: 2, from: 0.525, pitch: 0.145, depth: 0.075 })
+    key(0.365, [0xffd94a, 0xffbe00], { kind: 'none' }) +
+    key(0.5, [0x4cd96c, 0x2ec351], { kind: 'none' }) +
+    key(0.635, [0x5cc6f8, 0x0079ff], { kind: 'chevrons', count: 2, from: 0.5, pitch: 0.13, depth: 0.06 })
   )
 }
 
@@ -995,17 +1008,17 @@ function glassKeys(colours: [number, number, number], bow: number, spacing: numb
     const first = 0.5 - spacing
     const key = (index: number, x: number, bit: KeyBit, tip: KeyTip) => {
       const colour = colours[index]
-      const d = keyPath({ x, y: 0.325, bow, hole: bow * 0.27, blade: 0.075, bottom: 0.84, bit, tip })
+      const d = keyPath({ x, y: 0.285, bow, hole: bow * 0.3, blade: 0.082, bottom: 0.812, bit, tip })
       return eachLeaf(drop(k, black(0.35), 2, 1.5), [
-        path(d, lin(k, [hex(colour), hex(colour, alpha)], 50, 20, 50, 85)),
+        path(d, lin(k, [hex(colour), hex(colour, alpha)], 50, 16, 50, 82)),
         // Specular rim round the bow.
-        ring(x * 100, 32.5, bow * 100, 0.7, down(k, [white(0.6), white(0)], 32.5 - bow * 50, 32.5 + bow * 50)),
+        ring(x * 100, 28.5, bow * 100, 0.7, down(k, [white(0.6), white(0)], 28.5 - bow * 50, 28.5 + bow * 50)),
       ])
     }
     return (
       key(0, first, { kind: 'block' }, 'round') +
-      key(1, first + spacing, { kind: 'chevrons', count: 3, from: 0.52, pitch: 0.06, depth: 0.028 }, 'point') +
-      key(2, first + spacing * 2, { kind: 'chevrons', count: 2, from: 0.6, pitch: 0.05, depth: 0.018 }, 'round')
+      key(1, first + spacing, { kind: 'chevrons', count: 3, from: 0.49, pitch: 0.058, depth: 0.028 }, 'point') +
+      key(2, first + spacing * 2, { kind: 'chevrons', count: 2, from: 0.57, pitch: 0.05, depth: 0.018 }, 'round')
     )
   }
 }
@@ -1034,22 +1047,27 @@ function finsPath(): string {
 /** ArrivalsExhaustShape: a round head against the tail and three pointed
  *  tongues trailing away, about the tile centre. */
 function exhaustPath(): string {
-  const p = (x: number, y: number) => P(50 + 100 * x, 50 + 100 * y)
-  const c = 0.42
-  const r = 0.075
-  const k = 0.5523 * r
+  // Apple draws the puff clear of the tail, so the head sits at 0.47 down the
+  // rocket's axis and the whole shape is scaled with its radius.
+  const c = 0.47
+  const r = 0.085
+  const s = r / 0.075
+  const p = (x: number, dy: number) => P(50 + 100 * x * s, 50 + 100 * (c + dy * s))
+  const k = 0.5523 * 0.075
   return (
-    `M${p(-r, c)} C${p(-r, c - k)} ${p(-k, c - r)} ${p(0, c - r)} C${p(k, c - r)} ${p(r, c - k)} ${p(r, c)} ` +
-    `Q${p(0.076, 0.47)} ${p(0.06, 0.5)} Q${p(0.04, 0.468)} ${p(0.027, 0.458)} Q${p(0.028, 0.505)} ${p(0, 0.54)} ` +
-    `Q${p(-0.028, 0.505)} ${p(-0.027, 0.458)} Q${p(-0.04, 0.468)} ${p(-0.06, 0.5)} Q${p(-0.076, 0.47)} ${p(-r, c)} Z`
+    `M${p(-0.075, 0)} C${p(-0.075, -k)} ${p(-k, -0.075)} ${p(0, -0.075)} C${p(k, -0.075)} ${p(0.075, -k)} ${p(0.075, 0)} ` +
+    `Q${p(0.076, 0.05)} ${p(0.06, 0.08)} Q${p(0.04, 0.048)} ${p(0.027, 0.038)} Q${p(0.028, 0.085)} ${p(0, 0.12)} ` +
+    `Q${p(-0.028, 0.085)} ${p(-0.027, 0.038)} Q${p(-0.04, 0.048)} ${p(-0.06, 0.08)} Q${p(-0.076, 0.05)} ${p(-0.075, 0)} Z`
   )
 }
 
 /** Games: a glass rocket climbing to the upper right. */
 function rocketArt(hull: string, porthole: string): Art {
   return (k) => {
-    const hw = 27
-    const hh = 67
+    // Apple's hull is slimmer than a third of the tile and its porthole is
+    // nearly two thirds of the hull across.
+    const hw = 23.5
+    const hh = 70
     const hx = 50 - hw / 2
     const hy = 50 - hh / 2
     const hullD = hullPath(hx, hy, hw, hh)
@@ -1061,8 +1079,8 @@ function rocketArt(hull: string, porthole: string): Art {
       path(hullD, hull),
       // Nose cone light and the porthole.
       path(hullD, white(0.35), `clip-path="${noseClip}"`),
-      circle(50, 39, 10.5, porthole),
-      ring(50, 39, 10.5, 1.2, white(0.9)),
+      circle(50, 37, 14, porthole),
+      ring(50, 37, 14, 1.2, white(0.9)),
       // Exhaust: a solid glass puff under the tail.
       path(exhaustPath(), fade(hull, 0.7)),
     ])
@@ -1074,19 +1092,21 @@ function rocketArt(hull: string, porthole: string): Art {
 
 /** ArrivalsSkirtShape: the loupe's glass skirt, from under the eyepiece out
  *  to a round foot. */
-const skirtPath = 'M27,47 L19,76 Q50,97 81,76 L73,47 Z'
+const skirtPath = 'M29,47 L17,78 Q50,96 83,78 L71,47 Z'
 
-/** iOS 26 Preview: a charcoal loupe on a clear glass skirt, over blue. */
+/** iOS 26 Preview: a charcoal loupe on a clear glass skirt, over blue. The
+ *  drum is 0.46 of the tile across and the skirt flares wider than it, as on
+ *  the iOS render. */
 const loupe: Art = (k) =>
   path(skirtPath, down(k, [white(0.18), white(0.38)], 0, 100)) +
-  ellipse(50, 76.5, 40, 11, white(0.2)) +
+  ellipse(50, 77.5, 44, 12, white(0.2)) +
   path(skirtPath, 'none', stroke(white(0.7), 0.9)) +
   // The eyepiece: a dark drum with a lens in its top.
-  ellipse(50, 47, 52, 13, hex(0x1c1c1e)) +
-  rect(50, 22.5 + 12.25, 52, 24.5, lin(k, [hex(0x1e1e20), hex(0x46464a), hex(0x2a2a2c), hex(0x151517)], 24, 0, 76, 0)) +
-  text('PREVIEW 10×', 50, 38 + (4 * 1.178) / 2, 4, { fill: white(0.28), weight: weight.semibold }) +
-  ellipse(50, 22.5, 52, 15, down(k, [hex(0x5a5a5e), hex(0x28282a)], 15, 30)) +
-  ellipse(50, 22.5, 36, 10, rad(k, [hex(0x8fe3f6), hex(0x2f92c0), hex(0x0e3a55)], 32 + 0.45 * 36, 17.5 + 0.4 * 10, 17))
+  ellipse(50, 47, 46, 11.5, hex(0x1c1c1e)) +
+  rect(50, 22.5 + 12.25, 46, 24.5, lin(k, [hex(0x1e1e20), hex(0x46464a), hex(0x2a2a2c), hex(0x151517)], 27, 0, 73, 0)) +
+  text('PREVIEW 10×', 50, 38 + (3.6 * 1.178) / 2, 3.6, { fill: white(0.28), weight: weight.semibold }) +
+  ellipse(50, 22.5, 46, 13.5, down(k, [hex(0x5a5a5e), hex(0x28282a)], 15.5, 29.5)) +
+  ellipse(50, 22.5, 32, 9, rad(k, [hex(0x8fe3f6), hex(0x2f92c0), hex(0x0e3a55)], 34 + 0.45 * 32, 18 + 0.4 * 9, 15))
 
 /** iOS 27 Preview: a soft pastel picture with a glass loupe over its
  *  lower-right corner. */
@@ -1147,11 +1167,11 @@ const siriOrb: Art = (k) => {
       down(
         k,
         [
-          [hex(0x7f848c), 0.45],
-          [hex(0xc9cdd3), 0.62],
-          [hex(0xf4f5f7), 0.8],
-          [hex(0xb9bcc1), 0.93],
-          [hex(0x85888d), 1],
+          [hex(0x6f747c), 0.45],
+          [hex(0xb8bcc2), 0.6],
+          [hex(0xeff0f2), 0.74],
+          [hex(0xa2a6ab), 0.9],
+          [hex(0x6a6d72), 1],
         ],
         y0,
         y0 + s,
@@ -1193,18 +1213,18 @@ export const arrivals: HomeAppDef[] = [
       flat(2013, 0x56b7ef, passbookBands(false)), // sampled
       flat(2014, 0xfb4d43, passbookBands(true)), // sampled
       flat(2015, 0x1e1e1f, walletArt(1, false)), // sampled
-      design(2024, 0x303030, 0x151515, walletArt(0.92, false)), // documented
-      design(2025, 0x313131, 0x141414, walletArt(0.92, true)), // sampled
-      design(2026, 0x1f1e1f, 0x0e0e0e, walletArt(0.92, true, 0.72)), // sampled
+      design(2024, 0x303030, 0x151515, walletArt(0.98, false)), // documented
+      design(2025, 0x313131, 0x141414, walletArt(0.98, true)), // sampled
+      design(2026, 0x1f1e1f, 0x0e0e0e, walletArt(0.98, true, 0.72)), // sampled
     ],
   },
   {
     id: 'Health',
     designs: [
-      flat(2014, 0xffffff, heartArt(0xff5894, 0xff2b1f, [0.38, 0.222, 0.458, 0.356], 0.19, false)), // sampled
-      flat(2024, 0xffffff, heartArt(0xff5895, 0xff2d29, [0.39, 0.189, 0.449, 0.383], 0.23, false)), // sampled
-      design(2025, 0xffffff, 0xececec, heartArt(0xff3298, 0xfe0a1c, [0.392, 0.166, 0.447, 0.404], 0.22, true)), // sampled
-      design(2026, 0xfffefe, 0xe8e9e7, heartArt(0xeb3e7f, 0xea3337, [0.392, 0.166, 0.447, 0.404], 0.22, true, 0.42)), // sampled
+      flat(2014, 0xffffff, heartArt(0xff5894, 0xff2b1f, [0.386, 0.157, 0.456, 0.416], 0.19, false)), // sampled
+      flat(2024, 0xffffff, heartArt(0xff5895, 0xff2d29, [0.388, 0.155, 0.454, 0.418], 0.23, false)), // sampled
+      design(2025, 0xffffff, 0xececec, heartArt(0xff3298, 0xfe0a1c, [0.388, 0.157, 0.454, 0.421], 0.22, true)), // sampled
+      design(2026, 0xfffefe, 0xe8e9e7, heartArt(0xeb3e7f, 0xea3337, [0.388, 0.157, 0.454, 0.421], 0.22, true, 0.42)), // sampled
     ],
   },
   {
@@ -1228,10 +1248,10 @@ export const arrivals: HomeAppDef[] = [
       design(2015, 0xff505f, 0xff2e54, newspaper('photo')), // sampled
       design(2016, 0xef4961, 0xef3a5d, newspaper('thickLines')), // sampled
       design(2017, 0xef4961, 0xef3a5d, newspaper('thinLines')), // sampled
-      flat(2019, 0xffffff, newsLetter(0.572, 0xfd5163, 0xfd3b5c, false)), // sampled (iOS 13)
-      flat(2024, 0xffffff, newsLetter(0.546, 0xfd5163, 0xfd3c5c, false)), // sampled
-      design(2025, 0xffffff, 0xececec, newsLetter(0.53, 0xfe5668, 0xfe4666, true)), // sampled
-      design(2026, 0xfefefe, 0xf5f4f5, newsLetter(0.53, 0xfb5368, 0xf94051, true, 0.36)), // sampled
+      flat(2019, 0xffffff, newsLetter(0.579, 0xfd5163, 0xfd3b5c, false)), // sampled (iOS 13)
+      flat(2024, 0xffffff, newsLetter(0.579, 0xfd5163, 0xfd3c5c, false)), // sampled
+      design(2025, 0xffffff, 0xececec, newsLetter(0.585, 0xfe5668, 0xfe4666, true)), // sampled
+      design(2026, 0xfefefe, 0xf5f4f5, newsLetter(0.585, 0xfb5368, 0xf94051, true, 0.36)), // sampled
     ],
   },
   {
@@ -1420,8 +1440,8 @@ export const arrivals: HomeAppDef[] = [
     id: 'Passwords',
     designs: [
       flat(2024, 0xffffff, fannedKeys), // sampled
-      design(2025, 0x303131, 0x131313, glassKeys([0xe9b840, 0x5db462, 0x2f7cf6], 0.28, 0.205, 0.86)), // sampled
-      design(2026, 0x1f1f1f, 0x0f0f0f, glassKeys([0xffd242, 0x1fc04a, 0x2e83e6], 0.3, 0.2, 0.94)), // sampled
+      design(2025, 0x303131, 0x131313, glassKeys([0xe9b840, 0x5db462, 0x2f7cf6], 0.27, 0.185, 0.86)), // sampled
+      design(2026, 0x1f1f1f, 0x0f0f0f, glassKeys([0xffd242, 0x1fc04a, 0x2e83e6], 0.28, 0.19, 0.94)), // sampled
     ],
   },
   {

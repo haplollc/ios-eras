@@ -210,15 +210,27 @@ private struct MediaPetalRing: Shape {
     }
 }
 
-/// The navigation arrow: tip at the top centre, wings at the bottom corners,
-/// a notch 70% of the way down.
+/// Apple's navigation arrow: a slim triangle with a notch cut up to 0.66 of
+/// the height, and every corner rounded off - a blunt tip, soft swept-back
+/// wings, a soft notch. The outline is traced from the real iOS 18 Maps
+/// marker: straight sides, widest at 0.95 of the height, the wings rounded
+/// away so the bottom reads as two soft points rather than two spikes.
 private struct MediaArrowShape: Shape {
     func path(in rect: CGRect) -> Path {
+        func p(_ x: Double, _ y: Double) -> CGPoint { mediaPoint(x, y, in: rect) }
         var path = Path()
-        path.move(to: mediaPoint(0.5, 0, in: rect))
-        path.addLine(to: mediaPoint(1, 1, in: rect))
-        path.addLine(to: mediaPoint(0.5, 0.70, in: rect))
-        path.addLine(to: mediaPoint(0, 1, in: rect))
+        path.move(to: p(0.5, 0))
+        path.addCurve(to: p(0.5953, 0.10), control1: p(0.5295, 0), control2: p(0.5657, 0.038))
+        path.addLine(to: p(1, 0.95))
+        path.addQuadCurve(to: p(0.945, 1), control: p(1.024, 1))
+        path.addQuadCurve(to: p(0.8475, 0.95), control: p(0.9074, 1))
+        path.addLine(to: p(0.5479, 0.70))
+        path.addQuadCurve(to: p(0.4521, 0.70), control: p(0.5, 0.66))
+        path.addLine(to: p(0.1525, 0.95))
+        path.addQuadCurve(to: p(0.055, 1), control: p(0.0926, 1))
+        path.addQuadCurve(to: p(0, 0.95), control: p(-0.024, 1))
+        path.addLine(to: p(0.4047, 0.10))
+        path.addCurve(to: p(0.5, 0), control1: p(0.4343, 0.038), control2: p(0.4705, 0))
         path.closeSubpath()
         return path
     }
@@ -442,11 +454,12 @@ private struct MediaLensArt: View {
                                               .init(color: .white.opacity(0), location: 0.36)],
                                       center: .center, startAngle: .degrees(-40), endAngle: .degrees(320)), style: FillStyle(eoFill: true))
                 .mediaCircle(edge, 0.5, 0.5, r: 0.21)
-            // The highlight upper-left.
-            MediaGlow(colour: hex(0x6F9BF2), alpha: 0.95, core: 0.2).rotationEffect(.degrees(-40)).mediaAt(edge, 0.45, 0.36, w: 0.50, h: 0.28)
-            MediaGlow(colour: hex(0xA06A62), alpha: 0.85).rotationEffect(.degrees(-15)).mediaAt(edge, 0.335, 0.465, w: 0.20, h: 0.09)
-            MediaGlow(colour: hex(0xEEF5FF), alpha: 1, core: 0.35).mediaCircle(edge, 0.415, 0.405, r: 0.14)
-            Circle().fill(.white).mediaCircle(edge, 0.415, 0.405, r: 0.035)
+            // The highlight upper-left. The hot core stays small: on the real
+            // icon it is a specular point in a wide haze, not a white blob.
+            MediaGlow(colour: hex(0x6F9BF2), alpha: 0.95, core: 0.2).rotationEffect(.degrees(-40)).mediaAt(edge, 0.45, 0.36, w: 0.44, h: 0.26)
+            MediaGlow(colour: hex(0xA06A62), alpha: 0.85).rotationEffect(.degrees(-15)).mediaAt(edge, 0.335, 0.465, w: 0.18, h: 0.08)
+            MediaGlow(colour: hex(0xEEF5FF), alpha: 1, core: 0.30).mediaCircle(edge, 0.425, 0.40, r: 0.105)
+            Circle().fill(.white).mediaCircle(edge, 0.425, 0.40, r: 0.023)
         }
     }
 
@@ -478,11 +491,11 @@ private struct MediaLensArt: View {
                                       center: .center), style: FillStyle(eoFill: true))
                 .mediaCircle(edge, 0.5, 0.5, r: 0.205)
             // Top highlight: a blue haze, warm fringes either side, a white core.
-            MediaGlow(colour: hex(0x9DB4F5), alpha: 0.95, core: 0.2).mediaAt(edge, 0.5, 0.34, w: 0.52, h: 0.32)
-            MediaGlow(colour: hex(0x946A6C), alpha: 0.8).mediaAt(edge, 0.375, 0.36, w: 0.16, h: 0.09)
-            MediaGlow(colour: hex(0x946A6C), alpha: 0.8).mediaAt(edge, 0.625, 0.36, w: 0.16, h: 0.09)
-            MediaGlow(colour: hex(0xF4FBFF), alpha: 1, core: 0.35).mediaAt(edge, 0.5, 0.33, w: 0.26, h: 0.20)
-            Ellipse().fill(.white).mediaAt(edge, 0.5, 0.33, w: 0.075, h: 0.06)
+            MediaGlow(colour: hex(0x9DB4F5), alpha: 0.95, core: 0.2).mediaAt(edge, 0.5, 0.34, w: 0.46, h: 0.29)
+            MediaGlow(colour: hex(0x946A6C), alpha: 0.8).mediaAt(edge, 0.375, 0.36, w: 0.15, h: 0.08)
+            MediaGlow(colour: hex(0x946A6C), alpha: 0.8).mediaAt(edge, 0.625, 0.36, w: 0.15, h: 0.08)
+            MediaGlow(colour: hex(0xF4FBFF), alpha: 1, core: 0.30).mediaAt(edge, 0.5, 0.33, w: 0.20, h: 0.16)
+            Ellipse().fill(.white).mediaAt(edge, 0.5, 0.33, w: 0.055, h: 0.044)
         }
     }
 }
@@ -805,7 +818,7 @@ private struct MediaMapIOS7Art: View {
                 .mediaAt(edge, 0.345, 0.545, w: 0.40, h: 0.32)
             Circle().fill(.white).mediaCircle(edge, 0.765, 0.685, r: 0.10)
             Circle().fill(hex(0x007AFF)).mediaCircle(edge, 0.765, 0.685, r: 0.092)
-            MediaArrowShape().fill(.white).mediaAt(edge, 0.765, 0.68, w: 0.06, h: 0.11)
+            MediaArrowShape().fill(.white).mediaAt(edge, 0.765, 0.68, w: 0.068, h: 0.11)
         }
         .frame(width: edge, height: edge)
     }
@@ -891,6 +904,10 @@ private struct MediaMapModernArt: View {
         let discR = look == .ios15 ? 0.211 : (look == .ios26 ? 0.226 : 0.215)
         let centre = look == .ios15 ? (0.378, 0.622) : (0.375, 0.61)
         let rim = look == .ios15 ? 0.0 : 0.006
+        // The arrow, measured off each icon: iOS 26 draws it bigger in its disc.
+        let arrowW = look == .ios15 ? 0.224 : 0.239
+        let arrowH = look == .ios15 ? 0.271 : 0.290
+        let arrowRise = look == .ios15 ? 0.016 : 0.0175
         return ZStack {
             // Blocks.
             MediaPolygon(points: [(-0.02, -0.02), (0.233, -0.02), (0.233, upper(0.233)), (-0.02, upper(-0.02))]).fill(green)
@@ -933,7 +950,7 @@ private struct MediaMapModernArt: View {
                 .shadow(color: .black.opacity(look == .ios27 ? 0.3 : 0), radius: edge * 0.015, y: edge * 0.015)
                 .mediaCircle(edge, centre.0, centre.1, r: discR)
             MediaArrowShape().fill(look == .ios26 ? hex(0xE9F5FE) : .white)
-                .mediaAt(edge, centre.0, centre.1 - 0.013, w: 0.22, h: 0.271)
+                .mediaAt(edge, centre.0, centre.1 - arrowRise, w: arrowW, h: arrowH)
         }
         .frame(width: edge, height: edge)
     }
@@ -1032,7 +1049,7 @@ private struct MediaWeatherArt: View {
                 .shadow(color: hex(0x08306E, 0.35), radius: edge * 0.02, x: edge * 0.01, y: edge * 0.02)
             MediaCloudShape()
                 .fill(LinearGradient(colors: fill, startPoint: .top, endPoint: .bottom))
-                .scaleEffect(0.965)
+                .scaleEffect(0.978)
         }
         .mediaAt(edge, cx, cy, w: w, h: w * 0.674)
     }
@@ -1128,7 +1145,7 @@ private struct MediaClockSpec {
     // iOS 26: the Swiss railway dial filling the tile.
     static let swiss2025 = MediaClockSpec(face: nil, numeralInk: hex(0x3C3C3C), numeralWeight: .semibold, numeralSize: 0.14, numeralRadius: 0.275,
                                           numeralDesign: .rounded, quartersOnly: true, swiss: true,
-                                          handStyle: .stem, hourWidth: 0.0425, hourLength: 0.27, minuteWidth: 0.0425, minuteLength: 0.40,
+                                          handStyle: .stem, hourWidth: 0.040, hourLength: 0.27, minuteWidth: 0.040, minuteLength: 0.40,
                                           secondInk: hex(0xFF9501), secondWidth: 0.015, secondLength: 0.391, secondTail: 0.067, cap: .ring)
     // iOS 27: lighter indices, a shorter second hand.
     static let swiss2026: MediaClockSpec = {
@@ -1156,7 +1173,7 @@ private struct MediaClockArt: View {
             }
             if spec.swiss {
                 let inset = RoundedRectangle(cornerRadius: edge * 0.22, style: .continuous).inset(by: edge * 0.05)
-                MediaRadialBars(count: 12, inner: 0.35, outer: 0.80, width: 0.016)
+                MediaRadialBars(count: 12, inner: 0.35, outer: 0.80, width: 0.0135)
                     .fill(spec.indexInk)
                     .frame(width: edge, height: edge)
                     .clipShape(inset)
