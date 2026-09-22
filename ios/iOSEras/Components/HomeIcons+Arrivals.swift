@@ -212,14 +212,21 @@ extension HomeApp {
 
         HomeApp("Passwords", designs: [
             flat(2024, 0xFFFFFF, art { edge in ArrivalsFannedKeys(edge: edge) }),                                   // sampled
-            // Measured off the 1024 pt iOS 26 artwork: the tile is near-black (#1F1F1F to
-            // #0F0E0F, not #303131) and the keys are saturated — #FFCA3F, #31CD46 (ours read
-            // #5DB462) and #2F7ED6.
-            design(2025, 0x1F1F1F, 0x0F0E0F, art { edge in                                                         // measured
-                ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFCA3F), hex(0x2AC544), hex(0x2F7ED6)], bow: 0.27, spacing: 0.185, alpha: 0.94)
+            // Measured off the iOS 26.5 runtime icon, which is what an iPhone actually
+            // draws: the tile is #313131 to #141414, the same dark glass gradient Wallet
+            // and Measure use that year, and the keys are muted (#F7CE46, #58B95C,
+            // #2E80E0) and darken to 0.62 down the blade. The last pass keyed these to
+            // the macOS 26 dump instead and came out near-black with a vivid green.
+            design(2025, 0x313131, 0x141414, art { edge in                                                         // measured
+                ArrivalsGlassKeys(edge: edge, colours: [hex(0xF7CE46), hex(0x58B95C), hex(0x2E80E0)],
+                                  bow: 0.3403, spacing: 0.2052, fade: [0.93, 0.86, 0.62])
             }),
-            design(2026, 0x1F1F1F, 0x0F0F0F, art { edge in                                                         // sampled
-                ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFD242), hex(0x1FC04A), hex(0x2E83E6)], bow: 0.28, spacing: 0.19, alpha: 0.94)
+            // iOS 27 ships the same key geometry; its own artwork is brighter and barely
+            // darkens (measured #FFDE45, #18CB45, #2B8AF6, foot 0.77). The tile stays on
+            // this row's deliberate deeper black, as Measure's does.
+            design(2026, 0x1F1F1F, 0x0F0F0F, art { edge in                                                         // measured
+                ArrivalsGlassKeys(edge: edge, colours: [hex(0xFFDE45), hex(0x18CB45), hex(0x2B8AF6)],
+                                  bow: 0.3403, spacing: 0.2052, fade: [0.93, 0.79, 0.77])
             }),
         ]),
 
@@ -1372,8 +1379,16 @@ private struct ArrivalsButterfly: View {
 /// its bit. Bow and blade wind the same way so they fill as one; the hole
 /// winds the other way so it stays open.
 private struct ArrivalsKeyShape: Shape {
-    enum Bit { case none, chevrons(count: Int, from: Double, pitch: Double, depth: Double), block }
-    enum Tip { case round, point, slant }
+    // `inset` cuts the tooth valley back into the blade, the way Apple's
+    // middle key does; 0 leaves the valley on the blade's own edge. `notch`
+    // is a single bite out of the blade's right edge.
+    enum Bit {
+        case none
+        case chevrons(count: Int, from: Double, pitch: Double, depth: Double, inset: Double = 0)
+        case block
+        case notch(from: Double, to: Double, depth: Double)
+    }
+    enum Tip { case round, point, slant, bevel }
     var x: Double          // bow centre
     var y: Double
     var bow: Double        // bow diameter
@@ -1401,21 +1416,30 @@ private struct ArrivalsKeyShape: Shape {
         switch bit {
         case .none:
             break
-        case let .chevrons(count, from, pitch, depth):
+        case let .chevrons(count, from, pitch, depth, inset):
+            let vx = x1 - inset
             for index in 0..<count {
                 let y0 = from + pitch * Double(index)
-                path.addLine(to: p(x1, y0))
+                path.addLine(to: p(vx, y0))
                 path.addLine(to: p(x1 + depth, y0 + pitch * 0.45))
                 path.addLine(to: p(x1 + depth, y0 + pitch * 0.55))
-                path.addLine(to: p(x1, y0 + pitch))
+                path.addLine(to: p(vx, y0 + pitch))
             }
+        case let .notch(from, to, depth):
+            let span = to - from
+            path.addLine(to: p(x1, from))
+            path.addLine(to: p(x1 - depth, from + span * 0.45))
+            path.addLine(to: p(x1 - depth, from + span * 0.58))
+            path.addLine(to: p(x1, to))
         case .block:
-            path.addLine(to: p(x1, y + bow / 2 + 0.11))
-            path.addLine(to: p(x1 + blade * 0.85, y + bow / 2 + 0.11))
-            path.addLine(to: p(x1 + blade * 0.85, y + bow / 2 + 0.22))
-            path.addLine(to: p(x1 + blade * 0.4, y + bow / 2 + 0.22))
-            path.addLine(to: p(x1 + blade * 0.4, y + bow / 2 + 0.265))
-            path.addLine(to: p(x1, y + bow / 2 + 0.265))
+            // One plain rectangle. Measured off Apple's glass icon: it runs
+            // from 0.081 to 0.251 below the bow's foot and reaches 0.731 of a
+            // blade past the blade's right edge — no second step.
+            let b = y + bow / 2
+            path.addLine(to: p(x1, b + 0.081))
+            path.addLine(to: p(x1 + blade * 0.731, b + 0.081))
+            path.addLine(to: p(x1 + blade * 0.731, b + 0.251))
+            path.addLine(to: p(x1, b + 0.251))
         }
         let xc = (x0 + x1) / 2
         switch tip {
@@ -1424,9 +1448,17 @@ private struct ArrivalsKeyShape: Shape {
             path.addQuadCurve(to: p(xc, bottom), control: p(x1, bottom))
             path.addQuadCurve(to: p(x0, bottom - blade / 2), control: p(x0, bottom))
         case .point:
-            path.addLine(to: p(x1, bottom - blade * 0.6))
+            // Apple's middle key: the taper starts half a blade above the apex.
+            path.addLine(to: p(x1, bottom - blade * 0.5))
             path.addLine(to: p(xc, bottom))
-            path.addLine(to: p(x0, bottom - blade * 0.6))
+            path.addLine(to: p(x0, bottom - blade * 0.5))
+        case .bevel:
+            // A 'slant' the other way up: the right edge runs off at an angle
+            // and the bottom-left corner is the rounded one, as Apple's blue
+            // key is.
+            path.addLine(to: p(x1, bottom - blade * 0.44))
+            path.addLine(to: p(x0 + blade * 0.48, bottom))
+            path.addQuadCurve(to: p(x0, bottom - blade * 0.25), control: p(x0, bottom))
         case .slant:
             path.addLine(to: p(x1, bottom - blade * 0.25))
             path.addQuadCurve(to: p(x1 - blade * 0.3, bottom), control: p(x1, bottom))
@@ -1484,34 +1516,59 @@ private struct ArrivalsFannedKeys: View {
 }
 
 /// iOS 26+ Passwords: three glass keys side by side, bows overlapping.
+///
+/// Every number measured off Apple's own artwork — the iOS 26.5 and iOS 27
+/// runtime icons and the macOS 26 dump all agree to a fifth of a unit:
+/// - the three bows are the SAME circle, 34.03 across, on centres 20.52 apart
+///   at u 29.48 / 50.00 / 70.52, so the keys span u 12.5-87.5. The blue bow
+///   only looks the widest because it is drawn last and nothing crops it; we
+///   had three 27-unit bows 18.5 apart spanning u 18-81.
+/// - bow centres sit at v 34.3 (we had 28.5) and the blades end at v 82.7.
+/// - the blades are NOT the same width: 7.71 (yellow), 12.52 (green, whose
+///   zigzag cuts 1.05 back into it and stands 2.4 proud), 10.90 (blue).
+/// `fade` is the key's alpha at v 40, v 55 and the foot: the iOS 26 keys
+/// darken hard down the blade (to 0.62), the iOS 27 ones much less.
 private struct ArrivalsGlassKeys: View {
     let edge: CGFloat
     let colours: [Color]
     var bow: Double
     var spacing: Double
-    var alpha: Double
+    var fade: [Double]
+
+    private static let bowY = 0.343
 
     var body: some View {
         let first = 0.5 - spacing
         ZStack {
-            key(0, x: first, bit: .block, tip: .round)
-            key(1, x: first + spacing, bit: .chevrons(count: 3, from: 0.49, pitch: 0.058, depth: 0.028), tip: .point)
-            key(2, x: first + spacing * 2, bit: .chevrons(count: 2, from: 0.57, pitch: 0.05, depth: 0.018), tip: .round)
+            key(0, x: first, blade: 0.0771, bottom: 0.8275, bit: .block, tip: .round)
+            key(1, x: first + spacing, blade: 0.1252, bottom: 0.8344,
+                bit: .chevrons(count: 3, from: 0.505, pitch: 0.0875, depth: 0.024, inset: 0.0105), tip: .point)
+            key(2, x: first + spacing * 2, blade: 0.109, bottom: 0.829,
+                bit: .notch(from: 0.624, to: 0.713, depth: 0.023), tip: .bevel)
         }
         .frame(width: edge, height: edge)
     }
 
-    private func key(_ index: Int, x: Double, bit: ArrivalsKeyShape.Bit, tip: ArrivalsKeyShape.Tip) -> some View {
+    private func key(_ index: Int, x: Double, blade: Double, bottom: Double,
+                     bit: ArrivalsKeyShape.Bit, tip: ArrivalsKeyShape.Tip) -> some View {
         let colour = colours[index]
-        let shape = ArrivalsKeyShape(x: x, y: 0.285, bow: bow, hole: bow * 0.30, blade: 0.082, bottom: 0.812, bit: bit, tip: tip)
+        let bowY = Self.bowY
+        let shape = ArrivalsKeyShape(x: x, y: bowY, bow: bow, hole: bow * 0.238, holeLift: 0.175,
+                                     blade: blade, bottom: bottom, bit: bit, tip: tip)
+        let stops: [Gradient.Stop] = [
+            .init(color: colour, location: 0),
+            .init(color: colour.opacity(fade[0]), location: 0.364),
+            .init(color: colour.opacity(fade[1]), location: 0.591),
+            .init(color: colour.opacity(fade[2]), location: 1),
+        ]
         return ZStack {
-            shape.fill(LinearGradient(colors: [colour, colour.opacity(alpha)], startPoint: .init(x: 0.5, y: 0.16), endPoint: .init(x: 0.5, y: 0.82)))
+            shape.fill(LinearGradient(stops: stops, startPoint: .init(x: 0.5, y: 0.16), endPoint: .init(x: 0.5, y: 0.82)))
             // Specular rim round the bow.
             Circle()
                 .strokeBorder(LinearGradient(colors: [.white.opacity(0.6), .white.opacity(0)], startPoint: .top, endPoint: .bottom),
                               lineWidth: edge * 0.007)
                 .frame(width: edge * bow, height: edge * bow)
-                .position(x: edge * x, y: edge * 0.285)
+                .position(x: edge * x, y: edge * bowY)
         }
         .frame(width: edge, height: edge)
         .shadow(color: .black.opacity(0.35), radius: edge * 0.02, y: edge * 0.015)

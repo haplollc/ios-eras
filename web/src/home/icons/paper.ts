@@ -601,11 +601,13 @@ function glassGears(o: {
   backRadius: number
   backHole: number
   backTeeth: number
+  outer: number
   teeth: number
   depth: number
   ringHole: number
   spokeWidth: number
   hubRadius: number
+  pupil: number
   hole: string
 }): Art {
   return (k) => {
@@ -614,9 +616,13 @@ function glassGears(o: {
     let out = path(gearPath(56, 43, o.backRadius * 100, o.backTeeth, 0.16, 'rounded', o.backHole), o.back, EVENODD)
     // One gradient over each piece's own frame (topLeading -> bottomTrailing).
     const glass = linear(k, [WHITE, hex(0xf1f1f4), hex(0xdcdce0)], [0, 0], [1, 1])
-    let front = path(gearPath(50, 50, 41.5, o.teeth, o.depth, 'rounded', o.ringHole), glass, EVENODD)
+    // Apple's wheel: tooth tips at r 39.9, roots at 34.15, the ring's inner
+    // edge at 29.5 and a hub 6.8 across the bright part with a 2.7 dark
+    // pupil. Ours ran the whole band a unit and a half further out (41.5 to
+    // 36.7) on a hub only 5 across.
+    let front = path(gearPath(50, 50, o.outer, o.teeth, o.depth, 'rounded', o.ringHole), glass, EVENODD)
     for (let i = 0; i < 3; i++) front += capsule(67, 50, 34, o.spokeWidth * 100, glass, turn(i * 120))
-    front += circle(50, 50, o.hubRadius * 200, glass) + circle(50, 50, 3, o.hole)
+    front += circle(50, 50, o.hubRadius * 200, glass) + circle(50, 50, o.pupil, o.hole)
     // compositingGroup().opacity().shadow(): the shadow is of the faded
     // group, so it shows through the glass.
     out += `<g filter="${shadow(k, black(0.28), 2, 0, 2)}"><g opacity="${o.frontAlpha}">${front}</g></g>`
@@ -1110,20 +1116,26 @@ export const paper: HomeAppDef[] = [
       design(2013, 0xdbdcde, 0x898c91, nestedGear(hex(0x545454), hex(0xb5b5b5), hex(0xdbdcde), hex(0x898c91), 1.0)),
       design(2017, 0xe4e5e9, 0x8e8e94, nestedGear(hex(0x2e2e2f), hex(0xb4b4b6), hex(0xe4e5e9), hex(0x8e8e94), 1.0)),
       design(2024, 0xe4e5e9, 0x8e8e94, nestedGear(hex(0x2e2e2f), hex(0xb4b4b6), hex(0xe4e5e9), hex(0x8e8e94), 0.95)),
-      // Measured off the 1024 pt iOS 26 artwork: 36 teeth (ours drew 40) in
-      // a band from r 0.35 to 0.405, on a plate that runs #99999C to
-      // #6A696E — ours bottomed out 17 levels too dark at #59595D.
+      // 36 teeth (ours drew 40), and the band measured off the macOS 26 dump
+      // and the iOS 26.5 and iOS 27 runtime icons alike: tips at r 39.9,
+      // roots at 34.15 — 5.75 deep. Ours sat at 41.5 to 36.7, a unit and a
+      // half too far out and three quarters of a unit too shallow.
       design(
         2025,
         0xa2a2a7,
         0x707075,
-        glassGears({ frontAlpha: 0.94, back: hex(0xe2e2e6, 0.7), backRadius: 0.25, backHole: 0.76, backTeeth: 26, teeth: 36, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777c) }),
+        glassGears({ frontAlpha: 0.94, back: hex(0xe2e2e6, 0.7), backRadius: 0.25, backHole: 0.76, backTeeth: 26, outer: 39.9, teeth: 36, depth: 0.144, ringHole: 0.739, spokeWidth: 0.055, hubRadius: 0.068, pupil: 5.4, hole: hex(0x77777c) }),
       ),
+      // iOS 27 is speculative, so the glass reads sharper: a fainter front
+      // plate, a deeper cut to the teeth and thicker spokes. The tooth COUNT
+      // and the band's outer radius are not a style choice, though — both
+      // Apple runtimes still draw 36 teeth tipped at 39.9, so the 34 teeth
+      // on 41.5 this row was left with were simply the old error.
       design(
         2026,
         0x9c9c9f,
         0x78787d,
-        glassGears({ frontAlpha: 0.8, back: hex(0xe6e6ea, 0.62), backRadius: 0.23, backHole: 0.7, backTeeth: 22, teeth: 34, depth: 0.155, ringHole: 0.72, spokeWidth: 0.07, hubRadius: 0.06, hole: hex(0x78787d) }),
+        glassGears({ frontAlpha: 0.8, back: hex(0xe6e6ea, 0.62), backRadius: 0.23, backHole: 0.7, backTeeth: 22, outer: 39.9, teeth: 36, depth: 0.17, ringHole: 0.71, spokeWidth: 0.07, hubRadius: 0.068, pupil: 5.4, hole: hex(0x78787d) }),
       ),
     ],
   },

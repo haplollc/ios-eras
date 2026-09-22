@@ -231,17 +231,25 @@ extension HomeApp {
                     .frame(width: edge, height: edge)
             }),
             // iOS 26: Liquid Glass; a white glass gear, a grey gear seen through its windows.
-            // Measured off the 1024 pt artwork: 36 teeth (we drew 40) in a band from r 0.35 to
-            // 0.405, on a plate running #99999C to #6A696E — ours bottomed out 17 levels too dark.
+            // 36 teeth (we drew 40), and the band measured off the macOS 26 dump and the
+            // iOS 26.5 and iOS 27 runtime icons alike: tips at r 39.9, roots at 34.15 —
+            // 5.75 deep. Ours sat at 41.5 to 36.7, a unit and a half too far out and three
+            // quarters of a unit too shallow.
             design(2025, 0xA2A2A7, 0x707075, art { edge in                                                // measured
                 PaperGlassGears(frontAlpha: 0.94, back: hex(0xE2E2E6, 0.70), backRadius: 0.25, backHole: 0.76, backTeeth: 26,
-                                teeth: 36, depth: 0.115, ringHole: 0.75, spokeWidth: 0.055, hubRadius: 0.05, hole: hex(0x77777C))
+                                outer: 0.399, teeth: 36, depth: 0.144, ringHole: 0.739, spokeWidth: 0.055,
+                                hubRadius: 0.068, pupil: 0.054, hole: hex(0x77777C))
                     .frame(width: edge, height: edge)
             }),
-            // iOS 27: flatter grey; the front gear thicker and more translucent, the back gear smaller.
+            // iOS 27 is speculative, so the glass reads sharper: a fainter front plate, a
+            // deeper cut to the teeth and thicker spokes. The tooth COUNT and the band's
+            // outer radius are not a style choice, though — both Apple runtimes still draw
+            // 36 teeth tipped at 39.9, so the 34 teeth on 41.5 this row was left with were
+            // simply the old error.
             design(2026, 0x9C9C9F, 0x78787D, art { edge in                                                // measured
                 PaperGlassGears(frontAlpha: 0.80, back: hex(0xE6E6EA, 0.62), backRadius: 0.23, backHole: 0.70, backTeeth: 22,
-                                teeth: 34, depth: 0.155, ringHole: 0.72, spokeWidth: 0.07, hubRadius: 0.06, hole: hex(0x78787D))
+                                outer: 0.399, teeth: 36, depth: 0.17, ringHole: 0.71, spokeWidth: 0.07,
+                                hubRadius: 0.068, pupil: 0.054, hole: hex(0x78787D))
                     .frame(width: edge, height: edge)
             }),
         ]),
@@ -1071,13 +1079,19 @@ private struct PaperGlassGears: View {
     var backRadius: Double
     var backHole: Double
     var backTeeth: Int
-    /// The front wheel's teeth and tooth height (share of its tip radius).
+    /// The front wheel's tip radius, teeth and tooth height (share of the tip
+    /// radius). Apple's wheel: tips at r 39.9, roots at 34.15, the ring's
+    /// inner edge at 29.5 and a hub 6.8 across the bright part with a 2.7
+    /// dark pupil. Ours ran the whole band a unit and a half further out
+    /// (41.5 to 36.7) on a hub only 5 across.
+    var outer: Double
     var teeth: Int
     var depth: Double
-    /// The front ring's hole as a share of its 0.83 diameter.
+    /// The front ring's hole as a share of its tip radius.
     var ringHole: Double
     var spokeWidth: Double
     var hubRadius: Double
+    var pupil: Double
     var hole: Color
 
     var body: some View {
@@ -1094,7 +1108,7 @@ private struct PaperGlassGears: View {
                 ZStack {
                     PaperGearShape(teeth: teeth, depth: depth, profile: .rounded, hole: ringHole)
                         .fill(glass, style: FillStyle(eoFill: true))
-                        .frame(width: s * 0.83, height: s * 0.83)
+                        .frame(width: s * outer * 2, height: s * outer * 2)
                     ForEach(0..<3, id: \.self) { index in
                         Capsule().fill(glass)
                             .frame(width: s * 0.34, height: s * spokeWidth)
@@ -1102,7 +1116,7 @@ private struct PaperGlassGears: View {
                             .rotationEffect(.degrees(Double(index) * 120))
                     }
                     Circle().fill(glass).frame(width: s * hubRadius * 2, height: s * hubRadius * 2)
-                    Circle().fill(hole).frame(width: s * 0.03, height: s * 0.03)
+                    Circle().fill(hole).frame(width: s * pupil, height: s * pupil)
                 }
                 .compositingGroup()
                 .opacity(frontAlpha)

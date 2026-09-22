@@ -899,8 +899,15 @@ function butterflyArt(upperLeft: Pair, lowerLeft: Pair, upperRight: Pair, lowerR
 
 // ================================================================ Passwords
 
-type KeyBit = { kind: 'none' } | { kind: 'chevrons'; count: number; from: number; pitch: number; depth: number } | { kind: 'block' }
-type KeyTip = 'round' | 'point' | 'slant'
+type KeyBit =
+  | { kind: 'none' }
+  // `inset` cuts the tooth valley back into the blade, the way Apple's
+  // middle key does; 0 leaves the valley on the blade's own edge.
+  | { kind: 'chevrons'; count: number; from: number; pitch: number; depth: number; inset?: number }
+  | { kind: 'block' }
+  // A single bite out of the blade's right edge, `from` to `to`.
+  | { kind: 'notch'; from: number; to: number; depth: number }
+type KeyTip = 'round' | 'point' | 'slant' | 'bevel'
 
 interface KeySpec {
   x: number // bow centre
@@ -957,22 +964,36 @@ function keyPath(o: KeySpec): string {
   d += `M${p(x0, top)} L${p(x1, top)} `
   const bit = o.bit
   if (bit.kind === 'chevrons') {
+    const vx = x1 - (bit.inset ?? 0)
     for (let i = 0; i < bit.count; i++) {
       const y0 = bit.from + bit.pitch * i
-      d += `L${p(x1, y0)} L${p(x1 + bit.depth, y0 + bit.pitch * 0.45)} L${p(x1 + bit.depth, y0 + bit.pitch * 0.55)} L${p(x1, y0 + bit.pitch)} `
+      d += `L${p(vx, y0)} L${p(x1 + bit.depth, y0 + bit.pitch * 0.45)} L${p(x1 + bit.depth, y0 + bit.pitch * 0.55)} L${p(vx, y0 + bit.pitch)} `
     }
+  } else if (bit.kind === 'notch') {
+    const span = bit.to - bit.from
+    d +=
+      `L${p(x1, bit.from)} L${p(x1 - bit.depth, bit.from + span * 0.45)} ` +
+      `L${p(x1 - bit.depth, bit.from + span * 0.58)} L${p(x1, bit.to)} `
   } else if (bit.kind === 'block') {
+    // One plain rectangle. Measured off Apple's glass icon: it runs from
+    // 0.081 to 0.251 below the bow's foot and reaches 0.731 of a blade
+    // past the blade's right edge — no second step.
     const b = o.y + o.bow / 2
     d +=
-      `L${p(x1, b + 0.11)} L${p(x1 + o.blade * 0.85, b + 0.11)} L${p(x1 + o.blade * 0.85, b + 0.22)} ` +
-      `L${p(x1 + o.blade * 0.4, b + 0.22)} L${p(x1 + o.blade * 0.4, b + 0.265)} L${p(x1, b + 0.265)} `
+      `L${p(x1, b + 0.081)} L${p(x1 + o.blade * 0.731, b + 0.081)} ` +
+      `L${p(x1 + o.blade * 0.731, b + 0.251)} L${p(x1, b + 0.251)} `
   }
   const xc = (x0 + x1) / 2
   const bottom = o.bottom
   if (o.tip === 'round') {
     d += `L${p(x1, bottom - o.blade / 2)} Q${p(x1, bottom)} ${p(xc, bottom)} Q${p(x0, bottom)} ${p(x0, bottom - o.blade / 2)} `
   } else if (o.tip === 'point') {
-    d += `L${p(x1, bottom - o.blade * 0.6)} L${p(xc, bottom)} L${p(x0, bottom - o.blade * 0.6)} `
+    // Apple's middle key: the taper starts half a blade above the apex.
+    d += `L${p(x1, bottom - o.blade * 0.5)} L${p(xc, bottom)} L${p(x0, bottom - o.blade * 0.5)} `
+  } else if (o.tip === 'bevel') {
+    // A 'slant' the other way up: the right edge runs off at an angle and
+    // the bottom-left corner is the rounded one, as Apple's blue key is.
+    d += `L${p(x1, bottom - o.blade * 0.44)} L${p(x0 + o.blade * 0.48, bottom)} Q${p(x0, bottom)} ${p(x0, bottom - o.blade * 0.25)} `
   } else {
     d += `L${p(x1, bottom - o.blade * 0.25)} Q${p(x1, bottom)} ${p(x1 - o.blade * 0.3, bottom)} L${p(x0, bottom - o.blade * 0.75)} `
   }
@@ -1003,23 +1024,42 @@ const fannedKeys: Art = (k) => {
   )
 }
 
-/** iOS 26+ Passwords: three glass keys side by side, bows overlapping. */
-function glassKeys(colours: [number, number, number], bow: number, spacing: number, alpha: number): Art {
+/** iOS 26+ Passwords: three glass keys side by side, bows overlapping.
+ *
+ *  Every number measured off Apple's own artwork — the iOS 26.5 and iOS 27
+ *  runtime icons and the macOS 26 dump all agree to a fifth of a unit:
+ *  - the three bows are the SAME circle, 34.03 across, on centres 20.52
+ *    apart at u 29.48 / 50.00 / 70.52, so the keys span u 12.5-87.5. The
+ *    blue bow only looks the widest because it is drawn last and nothing
+ *    crops it; we had three 27-unit bows 18.5 apart spanning u 18-81.
+ *  - bow centres sit at v 34.3 (we had 28.5) and the blades end at v 82.7.
+ *  - the blades are NOT the same width: 7.71 (yellow), 12.52 (green, whose
+ *    zigzag cuts 1.05 back into it and stands 2.4 proud), 10.90 (blue).
+ *  `fade` is the key's alpha at v 40, v 55 and the foot: the iOS 26 keys
+ *  darken hard down the blade (to 0.62), the iOS 27 ones much less. */
+function glassKeys(colours: [number, number, number], bow: number, spacing: number, fade: [number, number, number]): Art {
   return (k) => {
     const first = 0.5 - spacing
-    const key = (index: number, x: number, bit: KeyBit, tip: KeyTip) => {
+    const bowY = 0.343
+    const key = (index: number, x: number, blade: number, bottom: number, bit: KeyBit, tip: KeyTip) => {
       const colour = colours[index]
-      const d = keyPath({ x, y: 0.285, bow, hole: bow * 0.3, blade: 0.082, bottom: 0.812, bit, tip })
+      const d = keyPath({ x, y: bowY, bow, hole: bow * 0.238, holeLift: 0.175, blade, bottom, bit, tip })
+      const stops: Stop[] = [
+        [hex(colour), 0],
+        [hex(colour, fade[0]), 0.364],
+        [hex(colour, fade[1]), 0.591],
+        [hex(colour, fade[2]), 1],
+      ]
       return eachLeaf(drop(k, black(0.35), 2, 1.5), [
-        path(d, lin(k, [hex(colour), hex(colour, alpha)], 50, 16, 50, 82)),
+        path(d, lin(k, stops, 50, 16, 50, 82)),
         // Specular rim round the bow.
-        ring(x * 100, 28.5, bow * 100, 0.7, down(k, [white(0.6), white(0)], 28.5 - bow * 50, 28.5 + bow * 50)),
+        ring(x * 100, bowY * 100, bow * 100, 0.7, down(k, [white(0.6), white(0)], bowY * 100 - bow * 50, bowY * 100 + bow * 50)),
       ])
     }
     return (
-      key(0, first, { kind: 'block' }, 'round') +
-      key(1, first + spacing, { kind: 'chevrons', count: 3, from: 0.49, pitch: 0.058, depth: 0.028 }, 'point') +
-      key(2, first + spacing * 2, { kind: 'chevrons', count: 2, from: 0.57, pitch: 0.05, depth: 0.018 }, 'round')
+      key(0, first, 0.0771, 0.8275, { kind: 'block' }, 'round') +
+      key(1, first + spacing, 0.1252, 0.8344, { kind: 'chevrons', count: 3, from: 0.505, pitch: 0.0875, depth: 0.024, inset: 0.0105 }, 'point') +
+      key(2, first + spacing * 2, 0.109, 0.829, { kind: 'notch', from: 0.624, to: 0.713, depth: 0.023 }, 'bevel')
     )
   }
 }
@@ -1449,11 +1489,17 @@ export const arrivals: HomeAppDef[] = [
     id: 'Passwords',
     designs: [
       flat(2024, 0xffffff, fannedKeys), // sampled
-      // Measured off the 1024 pt iOS 26 artwork: the tile is near-black
-      // (#1F1F1F to #0F0E0F, not #303131) and the keys are saturated —
-      // #FFCA3F, #31CD46 (ours read #5DB462), #2F7ED6.
-      design(2025, 0x1f1f1f, 0x0f0e0f, glassKeys([0xffca3f, 0x2ac544, 0x2f7ed6], 0.27, 0.185, 0.94)), // measured
-      design(2026, 0x1f1f1f, 0x0f0f0f, glassKeys([0xffd242, 0x1fc04a, 0x2e83e6], 0.28, 0.19, 0.94)), // sampled
+      // Measured off the iOS 26.5 runtime icon, which is what an iPhone
+      // actually draws: the tile is #313131 to #141414, the same dark glass
+      // gradient Wallet and Measure use that year, and the keys are muted
+      // (#F7CE46, #58B95C, #2E80E0) and darken to 0.62 down the blade. The
+      // last pass keyed these to the macOS 26 dump instead and came out
+      // near-black with a vivid green.
+      design(2025, 0x313131, 0x141414, glassKeys([0xf7ce46, 0x58b95c, 0x2e80e0], 0.3403, 0.2052, [0.93, 0.86, 0.62])), // measured
+      // iOS 27 ships the same key geometry; its own artwork is brighter and
+      // barely darkens (measured #FFDE45, #18CB45, #2B8AF6, foot 0.77). The
+      // tile stays on this row's deliberate deeper black, as Measure's does.
+      design(2026, 0x1f1f1f, 0x0f0f0f, glassKeys([0xffde45, 0x18cb45, 0x2b8af6], 0.3403, 0.2052, [0.93, 0.79, 0.77])), // measured
     ],
   },
   {

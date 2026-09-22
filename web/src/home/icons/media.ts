@@ -720,10 +720,16 @@ type MapLook = 'ios15' | 'ios26' | 'ios27'
 
 /** iOS 15 onward: Apple Park and I-280 as coloured blocks round a big marker. */
 function mapModernArt(k: Kit, look: MapLook): string {
-  // The diagonal road: upper edge y = 0.105 + 0.66 x, lower edge y = 0.39 + 0.655 x.
-  const upper = (x: number): [number, number] => [x * 100, (0.105 + 0.66 * x) * 100]
-  const lower = (x: number): [number, number] => [x * 100, (0.39 + 0.655 * x) * 100]
   const pick = <T,>(a: T, b: T, c: T) => (look === 'ios15' ? a : look === 'ios26' ? b : c)
+  // The diagonal road. iOS 15 keeps the numbers it was drawn to; on the glass
+  // icons the band was measured off Apple's own artwork and sits a unit
+  // higher than we had it — its edges fit y = 9.49 + 0.669 u (upper) and
+  // y = 38.66 + 0.666 u (lower), against our 10.41 + 0.670 and 38.92 + 0.654.
+  const upOff = pick(0.105, 0.0958, 0.0958)
+  const loOff = pick(0.39, 0.387, 0.387)
+  const loRise = pick(0.655, 0.66, 0.66)
+  const upper = (x: number): [number, number] => [x * 100, (upOff + 0.66 * x) * 100]
+  const lower = (x: number): [number, number] => [x * 100, (loOff + loRise * x) * 100]
   const green = pick(hex(0x7fee7e), hex(0x40dc5a), hex(0x40dc5a))
   const greenLow = pick(hex(0x43d761), hex(0x46db5f), hex(0x46db5f))
   const pink = pick(hex(0xed99d2), hex(0xfe88ce), hex(0xe774af))
@@ -745,14 +751,25 @@ function mapModernArt(k: Kit, look: MapLook): string {
     path(polygon([[52.2, -2], [102, -2], upper(1.02), upper(0.522)]), lin(k, [green, greenLow], 0, 0, 100, 100)) +
     path(polygon([lower(-0.02), lower(0.233), [23.3, 102], [-2, 102]]), pink) +
     path(polygon([[52.8, 73.5], [52.8, 102], [94, 102]]), yellow)
-  // Apple Park round the top-right corner.
+  // Apple Park round the top-right corner. Measured off Apple's glass icon
+  // along rays from the corner, and the radii hold to 0.05 at every angle:
+  // a dark rim at r 20.7-21.1, pale green 21.1-28.1, a white ring road
+  // 27.35-28.10, the base green again to 32.05, a second road 32.05-32.85,
+  // pale green to 38.95 and the outer rim to 39.4. Ours drew two pale bands
+  // at 27-33 and 36-40 with no roads at all.
   if (look === 'ios15') {
     out += ring(100, 0, 77.2, 17.5, hex(0xf2f1f6)) + ring(100, 0, 72.8, 13.1, hex(0xd2d1d6))
-  } else if (look === 'ios26') {
-    out += ring(100, 0, 66, 6, hex(0xbff4c8)) + ring(100, 0, 80, 4, hex(0xbff4c8, 0.55))
   } else {
-    out += ring(100, 0, 80, 15, hex(0x9ae398))
-    for (const d of [50, 62, 76]) out += ring(100, 0, d, 0.9, '#fff')
+    const park = pick(hex(0x80de8f), hex(0x80de8f), hex(0x8ee79c))
+    const road = pick('#fff', hex(0xf7f7f7), '#fff')
+    const parkRim = pick(hex(0x1ec13a), hex(0x1ec13a), hex(0x22c93f))
+    out +=
+      ring(100, 0, 77.9, 6.85, park) +
+      ring(100, 0, 56.2, 7.0, park) +
+      ring(100, 0, 65.7, 0.8, road) +
+      ring(100, 0, 56.2, 0.75, road) +
+      ring(100, 0, 42.2, 0.4, parkRim) +
+      ring(100, 0, 78.8, 0.45, parkRim)
   }
   // The route down the vertical road.
   out += rect(37.75, 20, 21.1, 44, down(k, [routeTop, routeLow], -2, 42))

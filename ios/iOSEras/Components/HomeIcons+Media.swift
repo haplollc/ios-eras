@@ -891,9 +891,16 @@ private struct MediaMapModernArt: View {
     let look: MediaMapLook
 
     var body: some View {
-        // The diagonal road: upper edge y = 0.105 + 0.66 x, lower edge y = 0.39 + 0.655 x.
-        func upper(_ x: Double) -> Double { 0.105 + 0.66 * x }
-        func lower(_ x: Double) -> Double { 0.39 + 0.655 * x }
+        // The diagonal road. iOS 15 keeps the numbers it was drawn to; on the
+        // glass icons the band was measured off Apple's own artwork and sits a
+        // unit higher than we had it — its edges fit y = 9.49 + 0.669 u (upper)
+        // and y = 38.66 + 0.666 u (lower), against our 10.41 + 0.670 and
+        // 38.92 + 0.654.
+        let upOff = look == .ios15 ? 0.105 : 0.0958
+        let loOff = look == .ios15 ? 0.39 : 0.387
+        let loRise = look == .ios15 ? 0.655 : 0.66
+        func upper(_ x: Double) -> Double { upOff + 0.66 * x }
+        func lower(_ x: Double) -> Double { loOff + loRise * x }
         let green: Color = look == .ios15 ? hex(0x7FEE7E) : hex(0x40DC5A)
         let greenLow: Color = look == .ios15 ? hex(0x43D761) : hex(0x46DB5F)
         let pink: Color = look == .ios15 ? hex(0xED99D2) : (look == .ios26 ? hex(0xFE88CE) : hex(0xE774AF))
@@ -915,19 +922,25 @@ private struct MediaMapModernArt: View {
                 .fill(LinearGradient(colors: [green, greenLow], startPoint: .topLeading, endPoint: .bottomTrailing))
             MediaPolygon(points: [(-0.02, lower(-0.02)), (0.233, lower(0.233)), (0.233, 1.02), (-0.02, 1.02)]).fill(pink)
             MediaPolygon(points: [(0.528, 0.735), (0.528, 1.02), (0.94, 1.02)]).fill(yellow)
-            // Apple Park round the top-right corner.
-            switch look {
-            case .ios15:
+            // Apple Park round the top-right corner. Measured off Apple's glass
+            // icon along rays from the corner, and the radii hold to 0.05 at
+            // every angle: a dark rim at r 20.7-21.1, pale green 21.1-28.1, a
+            // white ring road 27.35-28.10, the base green again to 32.05, a
+            // second road 32.05-32.85, pale green to 38.95 and the outer rim to
+            // 39.4. Ours drew two pale bands at 27-33 and 36-40, no roads.
+            if look == .ios15 {
                 Circle().strokeBorder(hex(0xF2F1F6), lineWidth: edge * 0.175).mediaCircle(edge, 1.0, 0.0, r: 0.386)
                 Circle().strokeBorder(hex(0xD2D1D6), lineWidth: edge * 0.131).mediaCircle(edge, 1.0, 0.0, r: 0.364)
-            case .ios26:
-                Circle().strokeBorder(hex(0xBFF4C8), lineWidth: edge * 0.06).mediaCircle(edge, 1.0, 0.0, r: 0.33)
-                Circle().strokeBorder(hex(0xBFF4C8, 0.55), lineWidth: edge * 0.04).mediaCircle(edge, 1.0, 0.0, r: 0.40)
-            case .ios27:
-                Circle().strokeBorder(hex(0x9AE398), lineWidth: edge * 0.15).mediaCircle(edge, 1.0, 0.0, r: 0.40)
-                Circle().strokeBorder(.white, lineWidth: edge * 0.009).mediaCircle(edge, 1.0, 0.0, r: 0.25)
-                Circle().strokeBorder(.white, lineWidth: edge * 0.009).mediaCircle(edge, 1.0, 0.0, r: 0.31)
-                Circle().strokeBorder(.white, lineWidth: edge * 0.009).mediaCircle(edge, 1.0, 0.0, r: 0.38)
+            } else {
+                let park: Color = look == .ios26 ? hex(0x80DE8F) : hex(0x8EE79C)
+                let road: Color = look == .ios26 ? hex(0xF7F7F7) : .white
+                let parkRim: Color = look == .ios26 ? hex(0x1EC13A) : hex(0x22C93F)
+                Circle().strokeBorder(park, lineWidth: edge * 0.0685).mediaCircle(edge, 1.0, 0.0, r: 0.3895)
+                Circle().strokeBorder(park, lineWidth: edge * 0.070).mediaCircle(edge, 1.0, 0.0, r: 0.281)
+                Circle().strokeBorder(road, lineWidth: edge * 0.008).mediaCircle(edge, 1.0, 0.0, r: 0.3285)
+                Circle().strokeBorder(road, lineWidth: edge * 0.0075).mediaCircle(edge, 1.0, 0.0, r: 0.281)
+                Circle().strokeBorder(parkRim, lineWidth: edge * 0.004).mediaCircle(edge, 1.0, 0.0, r: 0.211)
+                Circle().strokeBorder(parkRim, lineWidth: edge * 0.0045).mediaCircle(edge, 1.0, 0.0, r: 0.394)
             }
             // The route down the vertical road.
             Rectangle().fill(LinearGradient(colors: [routeTop, routeLow], startPoint: .top, endPoint: .bottom))

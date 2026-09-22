@@ -40,9 +40,21 @@ frame rate from a scene that cannot draw 60 of these a second live.
 
 One trap when re-recording: `simctl` stops emitting frames while the screen is
 still, so a recording that ends on a held year finishes *before* the walk does
-and the last seconds are missing. Terminate the app from a background job a
-few seconds before the recording's own length, which keeps frames flowing
-through the end of the walk. Nothing needs padding afterwards.
+and the last seconds are missing. Terminate the app from a background job,
+which keeps frames flowing through the end of the walk; nothing needs padding
+afterwards. Leave room at both ends: the recorder itself takes about four
+seconds to start, so the terminate lands that much earlier in the capture than
+the wall clock suggests. For the home screen walk at pace 3, record 110 s and
+terminate at 100 s. (90 s with a terminate at 87 s kills the app 1.6 s into
+the final hold.)
+
+`render_bare.sh`'s speed argument undoes the recording pace, but fit it rather
+than assuming it: the walk lands slightly short of `pace x 27 s` of capture,
+so pinning the speed to exactly 3 stretches the film and drifts the ruler by
+over a year against the published hero. Track the ruler indicator's centroid
+in the capture and in the current hero and least-squares trim and speed
+together (2.9273 / 2.9892 on the last run, with a residual of 2.3 px of a
+972 px track).
 
 `web/tools/og.mjs` regenerates the site's social card (`web/public/og.png`)
 from real renders of four years. There is no committed generator for
