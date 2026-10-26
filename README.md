@@ -18,6 +18,7 @@
   <img src="https://img.shields.io/badge/TypeScript-no_framework-3178C6?logo=typescript&logoColor=white" alt="TypeScript, no framework" />
   <img src="https://img.shields.io/badge/20_years-2007→2026-000000?logo=apple&logoColor=white" alt="2007 to 2026" />
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License" />
+  <a href="https://buymeacoffee.com/jcbuilds"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
 
 ---
