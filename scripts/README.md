@@ -11,7 +11,7 @@ Tools for turning a component's scripted demo walk into a Twitter hero.
   (`UIC_OPEN`) with its scripted walk on (e.g. `UIC_ERAS_DEMO`, `UIC_HOME_DEMO`).
   In demo mode the eras pages confine their layout to a 9:16 band of the
   screen so a frameless video can be cut straight from the capture.
-- `render_bare.sh <raw.mp4> <out.mp4> <year_count> [trim]` cuts that 9:16 band,
+- `render_bare.sh <raw.mp4> <out.mp4> <year_count> [trim] [speed]` cuts that 9:16 band,
   scales it to 1080x1920 @60 fps and lays the year ticks on it. No device frame.
   (For the framed look use a device-frame renderer
   with `HERO_BARE=1` and then `add_ticks.py` with the same TRIM.)
